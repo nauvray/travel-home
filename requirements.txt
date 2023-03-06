@@ -1,0 +1,9 @@
+
+ipdb
+ipykernel
+matplotlib
+seaborn
+numpy
+pandas
+scikit-learn
+google-cloud-storage

@@ -1,0 +1,32 @@
+.env
+.envrc
+# OS generated files #
+######################
+.DS_Store
+__MACOSX
+# Jupiter Notebook #
+.pytest_cache
+__pycache__
+*checkpoint.ipynb
+*.ipynb_checkpoints
+
+# Files from data #
+00-data/**/
+*.csv
+*.png
+*.jpg
+*.msg
+*.zip
+
+# inteliJ #
+.idea
+*.gz
+*PKG-INFO
+*.egg-info
+mlruns
+*.sqlite
+# IDE #
+*.vscode
+
+# Challengify - test challengification files
+*_challengify*
