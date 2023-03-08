@@ -8,3 +8,7 @@ pandas
 scikit-learn
 google-cloud-storage
 geopandas
+zipfile
+PIL.Image
+pathlib
+msgpack
