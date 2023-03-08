@@ -1,4 +1,3 @@
-
 ipdb
 ipykernel
 matplotlib
@@ -7,3 +6,6 @@ numpy
 pandas
 scikit-learn
 google-cloud-storage
+s2cell
+s2sphere
+msgpack
