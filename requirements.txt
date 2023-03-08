@@ -7,3 +7,4 @@ numpy
 pandas
 scikit-learn
 google-cloud-storage
+geopandas
