@@ -1,6 +1,7 @@
 import preprocess as preproc
 import os
 import time
+import geohash.geohash as geo
 
 def preprocess(root_folder : str, csv_name : str) -> None:
     csv_number = preproc.get_csv_number(csv_name)

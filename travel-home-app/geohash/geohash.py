@@ -6,11 +6,12 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
 import numpy as np
 from pathlib import Path
+import os
 
-def reduce_sample_csv(max:int,path:str) ->None:
+def reduce_sample_csv(limit_max:int,path:str) ->None:
     formated_path = Path(path)
     df_sample_csv=pd.read_csv(formated_path)
-    df_sample_csv=df_sample_csv[0:max]
+    df_sample_csv=df_sample_csv[0:limit_max]
     df_sample_csv.to_csv(formated_path,index=False)
     return df_sample_csv
 
@@ -26,8 +27,27 @@ def check_output_hashed(df:pd.DataFrame) ->None:
     print((df.cellid=='_').sum())
     return
 
-def geohashing_zoom_s2(df_sample:pd.DataFrame,start_zoom:int,end_zoom:int,threshold:int) ->pd.DataFrame:
+def geohashing_zoom_s2(start_zoom:int,end_zoom:int,threshold:int,path:str,all_files:bool,reduced:bool,limit_max:int) ->pd.DataFrame:
+    nb_files=5
+    if all_files == True :
+        for i in range(nb_files):
+            if i ==0:
+                df_sample=pd.read_csv(f'{path}meta_shard_{i}.csv')
+                df_sample['folder']=i
+            else:
+                df_temp=pd.read_csv(f'{path}meta_shard_{i}.csv')
+                df_temp['folder']=i
+                df_sample=pd.concat([df_sample,df_temp])
+        df_sample['cellid']='_'
+        df_sample['count']=1
+        df_sample['zoom']=1
+    else:
+        if reduced == True:
+            df_sample=reduce_sample_csv(limit_max,path)
+        else:
+            df_sample=load_sample_csv(path)
     df_sample_csv=df_sample.copy()
+    df_sample_csv.reset_index(inplace=True,drop=True)
     # Initialize the df to find geohash at start and start-1 zoom
     df_sample_csv[f'geohash_{start_zoom-1}'] = df_sample_csv.apply(lambda x: s2cell.lat_lon_to_cell_id(x.lat,x.lon,start_zoom-1),axis=1)
     df_sample_csv[f'geohash_{start_zoom}'] = df_sample_csv.apply(lambda x: s2cell.lat_lon_to_cell_id(x.lat,x.lon,start_zoom),axis=1)
@@ -57,7 +77,12 @@ def geohashing_zoom_s2(df_sample:pd.DataFrame,start_zoom:int,end_zoom:int,thresh
     for k in range(len(df_sample_csv)):
         if df_sample_csv.cellid[k]=='_':
             df_sample_csv.cellid[k]=df_sample_csv[f'geohash_{zoom+1}'][k]
-    df_sample_csv.drop(columns=[f'geohash_{zoom}',f'geohash_{zoom+1}'],inplace=True)
+    # df_sample_csv.drop(columns=[f'geohash_{zoom}',f'geohash_{zoom+1}'],inplace=True)
+    for i in range(nb_files):
+        df_temp = pd.read_csv(f'{path}meta_shard_{i}.csv')
+        df_extract=df_sample_csv[df_sample_csv['folder']==i].reset_index(drop=True,inplace=False)
+        df_extract=pd.concat([df_temp,df_extract['cellid']],axis=1)
+        df_extract.to_csv(f'{path}meta_shard_{i}.csv',index=False)
     return df_sample_csv
 
 def create_df_squares(df_sample_csv:pd.DataFrame) ->pd.DataFrame:
@@ -108,7 +133,6 @@ def plot_squares(df_cellid):
         x_big = [df_cellid['top_left_lon'][i],df_cellid['top_right_lon'][i],df_cellid['bot_left_lon'][i],df_cellid['bot_right_lon'][i],df_cellid['top_left_lon'][i]]  # lon
         y_big = [df_cellid['top_left_lat'][i],df_cellid['top_right_lat'][i],df_cellid['bot_left_lat'][i],df_cellid['bot_right_lat'][i],df_cellid['top_left_lat'][i]]   # lat
         map.plot(x_big, y_big, color='yellow', lw=1)
-
     plt.show()
-
+    plt.savefig('../00-data/map/Map.png')
     return

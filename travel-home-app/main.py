@@ -1,5 +1,6 @@
 import time
 import preprocess as preproc
+import geohash.geohash as geo
 
 def preprocess(root_folder : str, csv_name : str):
     # filter outdoor images
@@ -16,6 +17,12 @@ def preprocess(root_folder : str, csv_name : str):
     start_time3 = time.time()
     preproc.create_preproc_csv(root_folder, csv_name, df)
     print('==> Time to create csv:', round(time.time() - start_time3, 1), 'seconds')
+
+def geohash_csv(start_zoom:int,end_zoom:int,threshold:int,path:str,reduced:bool,limit_max:int) ->None:
+    df_geohashed=geo.geohashing_zoom_s2(start_zoom,end_zoom,threshold,path,reduced,limit_max)
+    df_cellid = geo.create_df_squares(df_geohashed)
+    geo.plot_squares(df_cellid)
+    return
 
 if __name__ == '__main__':
     root_folder = '../00-data/sample/'
