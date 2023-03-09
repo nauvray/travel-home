@@ -10,7 +10,7 @@ def geohash_csv(start_zoom:int,end_zoom:int,threshold:int,path:str,all_files:boo
 if __name__ == '__main__':
     path = '../00-data/data_csv/'
     start_zoom = 5
-    end_zoom = 17
+    end_zoom = 9
     threshold = 100
     reduced = False
     all_files=True

@@ -28,7 +28,7 @@ def check_output_hashed(df:pd.DataFrame) ->None:
     return
 
 def geohashing_zoom_s2(start_zoom:int,end_zoom:int,threshold:int,path:str,all_files:bool,reduced:bool,limit_max:int) ->pd.DataFrame:
-    nb_files=5
+    nb_files=3
     if all_files == True :
         for i in range(nb_files):
             if i ==0:
@@ -49,7 +49,6 @@ def geohashing_zoom_s2(start_zoom:int,end_zoom:int,threshold:int,path:str,all_fi
     df_sample_csv=df_sample.copy()
     df_sample_csv.reset_index(inplace=True,drop=True)
     # Initialize the df to find geohash at start and start-1 zoom
-    df_sample_csv[f'geohash_{start_zoom-1}'] = df_sample_csv.apply(lambda x: s2cell.lat_lon_to_cell_id(x.lat,x.lon,start_zoom-1),axis=1)
     df_sample_csv[f'geohash_{start_zoom}'] = df_sample_csv.apply(lambda x: s2cell.lat_lon_to_cell_id(x.lat,x.lon,start_zoom),axis=1)
     completed_list=[]
     # Start looping and zooming
@@ -57,8 +56,6 @@ def geohashing_zoom_s2(start_zoom:int,end_zoom:int,threshold:int,path:str,all_fi
         if (df_sample_csv.cellid=='_').sum()!=0:
             if zoom > start_zoom-1:
                 print((df_sample_csv.cellid=='_').sum())
-                zoom_n1 = df_sample_csv[[f'geohash_{zoom-1}','count']]
-                zoom_n1=zoom_n1.groupby(by=f'geohash_{zoom-1}').count().reset_index()
                 zoom_n2 = df_sample_csv[[f'geohash_{zoom}','count']]
                 zoom_n2=zoom_n2.groupby(by=f'geohash_{zoom}').count().reset_index()
                 for i in range(len(df_sample_csv)):
@@ -70,19 +67,20 @@ def geohashing_zoom_s2(start_zoom:int,end_zoom:int,threshold:int,path:str,all_fi
                                     df_sample_csv.loc[j,'cellid']=df_sample_csv.loc[i,f'geohash_{zoom}']
                                     df_sample_csv.loc[j,'zoom']=zoom
                                     completed_list.append(j)
-                df_sample_csv.drop(columns=[f'geohash_{zoom-1}'],inplace=True)
+                df_sample_csv.drop(columns=[f'geohash_{zoom}'],inplace=True)
                 df_sample_csv[f'geohash_{zoom+1}'] = df_sample_csv.apply(lambda x: s2cell.lat_lon_to_cell_id(x.lat,x.lon,zoom+1),axis=1)
             else:
                 next
     for k in range(len(df_sample_csv)):
         if df_sample_csv.cellid[k]=='_':
-            df_sample_csv.cellid[k]=df_sample_csv[f'geohash_{zoom+1}'][k]
-    # df_sample_csv.drop(columns=[f'geohash_{zoom}',f'geohash_{zoom+1}'],inplace=True)
+            df_sample_csv.loc[k,'cellid']=df_sample_csv.loc[k,f'geohash_{zoom+1}']
+            df_sample_csv.loc[k,'zoom']=zoom+1
+    df_sample_csv.drop(columns=[f'geohash_{zoom+1}'],inplace=True)
     for i in range(nb_files):
         df_temp = pd.read_csv(f'{path}meta_shard_{i}.csv')
         df_extract=df_sample_csv[df_sample_csv['folder']==i].reset_index(drop=True,inplace=False)
         df_extract=pd.concat([df_temp,df_extract['cellid']],axis=1)
-        df_extract.to_csv(f'{path}meta_shard_{i}.csv',index=False)
+        df_extract.to_csv(f'{path}../data_csv_hashed/meta_shard_{i}.csv',index=False)
     return df_sample_csv
 
 def create_df_squares(df_sample_csv:pd.DataFrame) ->pd.DataFrame:
