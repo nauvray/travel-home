@@ -31,7 +31,7 @@ def get_df_from_csv(csv_path : str, csv_name : str) -> pd.DataFrame:
     '''return data frame from csv file'''
     csv_file_path = os.path.join(csv_path, csv_name)
     df = pd.read_csv(csv_file_path)
-    print(f"✅ data frame loaded ({df.shape[0]} rows, {df.shape[1]} columns)")
+    print(f"\ndata frame loaded ({df.shape[0]} rows, {df.shape[1]} columns)")
     return df
 
 def add_storage_path(df : pd.DataFrame) -> pd.DataFrame:
@@ -243,7 +243,7 @@ def create_tags(input_img, model, labels_IO, labels_attribute, W_attribute, clas
     # result = heatmap * 0.4 + img * 0.5
     # cv2.imwrite('cam.jpg', result)
 
-def tag_image(img : Image) -> None:
+def get_image_outdoor_tag(img : Image) -> int:
     # load the labels
     classes, labels_IO, labels_attribute, W_attribute = load_labels()
     # load the model
@@ -252,5 +252,4 @@ def tag_image(img : Image) -> None:
     tf = returnTF() # image transformer
     input_img = V(tf(img).unsqueeze(0))
     outdoor = create_tags(input_img, model, labels_IO, labels_attribute, W_attribute, classes)
-
     return outdoor
