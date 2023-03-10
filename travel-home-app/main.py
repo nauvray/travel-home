@@ -26,7 +26,7 @@ def preprocess_csv_task(root_folder : str, csv_name : str) -> None:
     # df : img lat lon hexa cellid + storage path
     df = utils.get_df_from_csv(root_folder, csv_name)
     df = utils.add_storage_path(df)
-    # df = df.head(100)
+    # df = df.head(50)
     preprocess(root_folder, csv_name, df)
 
 def preprocess_csv(csv_names : list)-> None:

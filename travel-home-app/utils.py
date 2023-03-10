@@ -15,6 +15,7 @@ from torch.autograd import Variable as V
 import torchvision.models as models
 from torchvision import transforms as trn
 from torch.nn import functional as F
+import torchsummary
 import cv2
 from PIL import Image
 from google.cloud import storage
@@ -175,8 +176,6 @@ def load_model(pretrained):
     # this model has a last conv feature map as 14x14
 
     model_file = 'wideresnet18_places365.pth.tar'
-    # arch = 'wideresnet152'
-    # model_file = '%s_places365.pth.tar' % arch
 
     if not os.access(model_file, os.W_OK):
         os.system('wget http://places2.csail.mit.edu/models_places365/' + model_file)
@@ -184,6 +183,11 @@ def load_model(pretrained):
 
     import wideresnet
     model = wideresnet.resnet18(pretrained=pretrained, num_classes=365)
+
+    # print(torchsummary.summary(model, (3, 224,224)))
+    ##########################
+    # print(model)
+
     checkpoint = torch.load(model_file, map_location=lambda storage, loc: storage)
     state_dict = {str.replace(k,'module.',''): v for k,v in checkpoint['state_dict'].items()}
     model.load_state_dict(state_dict)
@@ -192,15 +196,19 @@ def load_model(pretrained):
     for i, (name, module) in enumerate(model._modules.items()):
         module = recursion_change_bn(model)
     model.avgpool = torch.nn.AvgPool2d(kernel_size=14, stride=1, padding=0)
-
     model.eval()
+
+    model2 = model.avgpool
+
+    ##################
+    # print(model2)
 
     # hook the feature extractor
     features_names = ['layer4','avgpool'] # this is the last conv layer of the resnet
     for name in features_names:
         model._modules.get(name).register_forward_hook(hook_feature)
 
-    # print("features_blobs", features_blobs)
+
     return model
 
 def create_tags(input_img, model, labels_IO, labels_attribute, W_attribute, classes):
