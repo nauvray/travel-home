@@ -6,15 +6,19 @@ numpy
 pandas
 scikit-learn
 google-cloud-storage
-geopandas
+geopandas #Plot map for the output
 pathlib
-msgpack
-s2cell
-s2sphere
-msgpack
+s2cell #Provide s2cellid
+s2sphere #From s2cellid to corners
+msgpack #Unpack the photos
 torch
 torchvision
 opencv-python
+fastapi
+Basemap #Plot the map with bubbles
+fsspec #GCP VM
+gcsfs #GCP VM
+
 # Trick to install the version of Tensorflow depending on your processor: darwin == Mac, ARM == M1
 tensorflow-macos==2.10.0; sys_platform == 'darwin' and 'ARM' in platform_version # Mac M-chips
 tensorflow==2.10.0; sys_platform == 'darwin' and 'ARM' not in platform_version # Mac Intel chips
