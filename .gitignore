@@ -11,7 +11,7 @@ __pycache__
 *.ipynb_checkpoints
 
 # Files from data #
-00-data/**/
+00-data/
 *.csv
 *.png
 *.jpg
