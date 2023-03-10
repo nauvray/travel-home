@@ -47,6 +47,7 @@ def display_image_from_hexa(hexa : str) -> None:
     plt.imshow(image)
     plt.show()
 
+
 def display_image_from_npy(npy_path : str, npy_file : str) -> None:
     '''display npy image'''
     img_array = load_npy_image(npy_path, npy_file)

@@ -43,6 +43,7 @@ def preprocess_csv(csv_names : list)-> None:
         for process in processes:
             process.join()
 
+
 if __name__ == '__main__':
     root_folder = '../00-data/sample/'
     start_time = time.time()
