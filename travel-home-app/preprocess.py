@@ -89,6 +89,7 @@ def save_in_gcs_task(hexa, img_name, cellid, csv_path):
     # clean
     os.remove(npy_local_file_path)
 
+
 def create_preproc_csv(root_folder : str, csv_name : str, df : pd.DataFrame) -> None:
     print(f"\nCreating pre-processed csv...")
     csv_number = utils.get_csv_number(csv_name)
