@@ -6,7 +6,7 @@ from PIL import Image
 from google.cloud import storage
 from params import *
 from io import BytesIO
-import multiprocessing
+from multiprocessing import Process
 
 # nb of threads for // computing
 PARALLEL_COMPUTING_BATCH_SIZE = 3
@@ -44,14 +44,13 @@ def save_images_as_npy(csv_path : str, df : pd.DataFrame) -> None:
     print(f"\nSaving images in gcs...")
     # for index in range(df.shape[0]):
     #     save_in_gcs_task(df.data[index], df.img[index], df.cellid[index], csv_path)
-    print(multiprocessing.cpu_count())
 
     for i in range(0, len(df), PARALLEL_COMPUTING_BATCH_SIZE):
         # create all tasks
         if (i + PARALLEL_COMPUTING_BATCH_SIZE < len(df)):
-            processes = [multiprocessing.Process(target=save_in_gcs_task, args=(df.data[j], df.img[j], df.cellid[j], csv_path,)) for j in range(i, i+PARALLEL_COMPUTING_BATCH_SIZE)]
+            processes = [Process(target=save_in_gcs_task, args=(df.data[j], df.img[j], df.cellid[j], csv_path,)) for j in range(i, i+PARALLEL_COMPUTING_BATCH_SIZE)]
         else:
-            processes = [multiprocessing.Process(target=save_in_gcs_task, args=(df.data[j], df.img[j], df.cellid[j], csv_path,)) for j in range(i, len(df))]
+            processes = [Process(target=save_in_gcs_task, args=(df.data[j], df.img[j], df.cellid[j], csv_path,)) for j in range(i, len(df))]
         # start all processes
         for process in processes:
             process.start()
@@ -94,14 +93,5 @@ def create_preproc_csv(root_folder : str, csv_name : str, df : pd.DataFrame) -> 
     print(f"\nCreating pre-processed csv...")
     csv_number = utils.get_csv_number(csv_name)
     output_csv_name = f'pre_proc_data_{csv_number}.csv'
-
-    csv_local_file_path = os.path.join(root_folder, output_csv_name)
     df.to_csv(os.path.join(root_folder, output_csv_name))
-
-    storage_filename = f"preproc_csv/{output_csv_name}"
-    client = storage.Client()
-    bucket = client.bucket(BUCKET_NAME)
-    blob = bucket.blob(storage_filename)
-    blob.upload_from_filename(csv_local_file_path)
-
-    print(f"✅ csv {output_csv_name} created and saved in gcs!")
+    print(f"✅ csv {output_csv_name} created!")
