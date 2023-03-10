@@ -1,5 +1,4 @@
 import time
-import preprocess as preproc
 import geohash.geohash as geo
 
 def geohash_csv(start_zoom:int,end_zoom:int,threshold:int,path:str,all_files:bool,reduced:bool,limit_max:int,) ->None:
@@ -8,10 +7,10 @@ def geohash_csv(start_zoom:int,end_zoom:int,threshold:int,path:str,all_files:boo
     geo.plot_squares(df_cellid)
     return
 if __name__ == '__main__':
-    path = '../00-data/data_csv/'
+    path = 'gs://travel-home-bucket/data_csv/'
     start_zoom = 5
-    end_zoom = 9
-    threshold = 100
+    end_zoom = 18
+    threshold = 500
     reduced = False
     all_files=True
     limit_max=1500
