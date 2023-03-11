@@ -17,9 +17,9 @@ run_api:
 # 	mkdir ~/.lewagon/mlops/training_outputs/models
 # 	mkdir ~/.lewagon/mlops/training_outputs/params
 
-run_vm
+run_vm:
 	gcloud compute ssh $INSTANCE
 
-show_bucket
+show_bucket:
 	gcloud config set project $BUCKET_PROJECT
 	gsutil ls gs://$BUCKET_NAME/

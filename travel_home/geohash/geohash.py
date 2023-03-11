@@ -60,7 +60,6 @@ def geohashing_zoom_s2(start_zoom:int,end_zoom:int,threshold:int,path:str,all_fi
                 df_sample['count']=1
                 df_sample['zoom']=1
                 df_sample.to_csv(f'{path}meta_shard_no_img.csv',index=False)
-
     else:
         if reduced == True:
             df_sample=reduce_sample_csv(limit_max,path)
