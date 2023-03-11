@@ -3,10 +3,10 @@ import s2cell
 import s2sphere
 from s2sphere import CellId, LatLng, Cell
 import matplotlib.pyplot as plt
-from mpl_toolkits.basemap import Basemap
 import numpy as np
 from pathlib import Path
 import os
+from mpl_toolkits.basemap import Basemap
 
 def reduce_sample_csv(limit_max:int,path:str) ->None:
     formated_path = Path(path)
@@ -28,19 +28,38 @@ def check_output_hashed(df:pd.DataFrame) ->None:
     return
 
 def geohashing_zoom_s2(start_zoom:int,end_zoom:int,threshold:int,path:str,all_files:bool,reduced:bool,limit_max:int) ->pd.DataFrame:
-    nb_files=5
+    nb_files=142
     if all_files == True :
+        file_path = Path(f'{path}meta_shard_no_img.csv')
+        if file_path.is_file():
+            df_sample=pd.read_csv(f'{path}meta_shard_no_img.csv')
+            max_i = int(df_sample['folder'].max())
+            df_sample=df_sample[df_sample['folder']<max_i]
+            print(f'Loading the folder until file {max_i}')
+        else:
+            max_i=0
+            print('No existing file')
         for i in range(nb_files):
-            if i ==0:
-                df_sample=pd.read_csv(f'{path}meta_shard_{i}.csv')
-                df_sample['folder']=i
+            if i < max_i:
+                next
             else:
-                df_temp=pd.read_csv(f'{path}meta_shard_{i}.csv')
-                df_temp['folder']=i
-                df_sample=pd.concat([df_sample,df_temp])
-        df_sample['cellid']='_'
-        df_sample['count']=1
-        df_sample['zoom']=1
+                if i ==0:
+                    df_sample=pd.read_csv(f'{path}meta_shard_{i}.csv')
+                    df_sample['folder']=i
+                    df_sample.drop(columns=['data'],inplace=True)
+                    df_sample.to_csv(f'{path}meta_shard_no_img.csv',index=False)
+                    print(f'Loaded {i} file')
+                else:
+                    df_temp=pd.read_csv(f'{path}meta_shard_{i}.csv')
+                    df_temp['folder']=i
+                    df_temp.drop(columns=['data'],inplace=True)
+                    df_sample=pd.concat([df_sample,df_temp])
+                    df_sample.to_csv(f'{path}meta_shard_no_img.csv',index=False)
+                    print(f'Loaded {i} file')
+                df_sample['cellid']='_'
+                df_sample['count']=1
+                df_sample['zoom']=1
+                df_sample.to_csv(f'{path}meta_shard_no_img.csv',index=False)
     else:
         if reduced == True:
             df_sample=reduce_sample_csv(limit_max,path)
@@ -49,7 +68,6 @@ def geohashing_zoom_s2(start_zoom:int,end_zoom:int,threshold:int,path:str,all_fi
     df_sample_csv=df_sample.copy()
     df_sample_csv.reset_index(inplace=True,drop=True)
     # Initialize the df to find geohash at start and start-1 zoom
-    df_sample_csv[f'geohash_{start_zoom-1}'] = df_sample_csv.apply(lambda x: s2cell.lat_lon_to_cell_id(x.lat,x.lon,start_zoom-1),axis=1)
     df_sample_csv[f'geohash_{start_zoom}'] = df_sample_csv.apply(lambda x: s2cell.lat_lon_to_cell_id(x.lat,x.lon,start_zoom),axis=1)
     completed_list=[]
     # Start looping and zooming
@@ -57,8 +75,6 @@ def geohashing_zoom_s2(start_zoom:int,end_zoom:int,threshold:int,path:str,all_fi
         if (df_sample_csv.cellid=='_').sum()!=0:
             if zoom > start_zoom-1:
                 print((df_sample_csv.cellid=='_').sum())
-                zoom_n1 = df_sample_csv[[f'geohash_{zoom-1}','count']]
-                zoom_n1=zoom_n1.groupby(by=f'geohash_{zoom-1}').count().reset_index()
                 zoom_n2 = df_sample_csv[[f'geohash_{zoom}','count']]
                 zoom_n2=zoom_n2.groupby(by=f'geohash_{zoom}').count().reset_index()
                 for i in range(len(df_sample_csv)):
@@ -70,19 +86,22 @@ def geohashing_zoom_s2(start_zoom:int,end_zoom:int,threshold:int,path:str,all_fi
                                     df_sample_csv.loc[j,'cellid']=df_sample_csv.loc[i,f'geohash_{zoom}']
                                     df_sample_csv.loc[j,'zoom']=zoom
                                     completed_list.append(j)
-                df_sample_csv.drop(columns=[f'geohash_{zoom-1}'],inplace=True)
+                df_sample_csv.drop(columns=[f'geohash_{zoom}'],inplace=True)
                 df_sample_csv[f'geohash_{zoom+1}'] = df_sample_csv.apply(lambda x: s2cell.lat_lon_to_cell_id(x.lat,x.lon,zoom+1),axis=1)
             else:
                 next
     for k in range(len(df_sample_csv)):
         if df_sample_csv.cellid[k]=='_':
-            df_sample_csv.cellid[k]=df_sample_csv[f'geohash_{zoom+1}'][k]
-    # df_sample_csv.drop(columns=[f'geohash_{zoom}',f'geohash_{zoom+1}'],inplace=True)
+            df_sample_csv.loc[k,'cellid']=df_sample_csv.loc[k,f'geohash_{zoom+1}']
+            df_sample_csv.loc[k,'zoom']=zoom+1
+    # df_sample_csv.drop(columns=[f'geohash_{zoom+1}'],inplace=True)
     for i in range(nb_files):
         df_temp = pd.read_csv(f'{path}meta_shard_{i}.csv')
+        print(f'Loading file {i}')
         df_extract=df_sample_csv[df_sample_csv['folder']==i].reset_index(drop=True,inplace=False)
         df_extract=pd.concat([df_temp,df_extract['cellid']],axis=1)
-        df_extract.to_csv(f'{path}meta_shard_{i}.csv',index=False)
+        df_extract.to_csv(f'{path}../data_csv_hashed/meta_shard_{i}.csv',index=False)
+        print(f'File {i} loaded in {path}../data_csv_hashed/meta_shard_{i}.csv')
     return df_sample_csv
 
 def create_df_squares(df_sample_csv:pd.DataFrame) ->pd.DataFrame:
@@ -121,7 +140,7 @@ def create_df_squares(df_sample_csv:pd.DataFrame) ->pd.DataFrame:
         df_cellid.loc[i,'bot_right_lon'] = [float(j) for j in df_cellid['bot_right_lon'][i].split(',')][1]
     return df_cellid
 
-def plot_squares(df_cellid):
+def plot_squares(df_cellid:pd.DataFrame,path:str):
     fig = plt.Figure()
     map = Basemap(projection='cyl', resolution = 'i', llcrnrlon=-5, \
                 llcrnrlat=42, urcrnrlon=10, urcrnrlat=52)
@@ -134,5 +153,5 @@ def plot_squares(df_cellid):
         y_big = [df_cellid['top_left_lat'][i],df_cellid['top_right_lat'][i],df_cellid['bot_left_lat'][i],df_cellid['bot_right_lat'][i],df_cellid['top_left_lat'][i]]   # lat
         map.plot(x_big, y_big, color='yellow', lw=1)
     plt.show()
-    plt.savefig('../00-data/map/Map.png')
+    plt.savefig(f'{path}Map.png')
     return

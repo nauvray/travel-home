@@ -94,5 +94,5 @@ def create_preproc_csv(root_folder : str, csv_name : str, df : pd.DataFrame) -> 
     print(f"\nCreating pre-processed csv...")
     csv_number = utils.get_csv_number(csv_name)
     output_csv_name = f'pre_proc_data_{csv_number}.csv'
-    df.to_csv(os.path.join(root_folder, output_csv_name))
+    df.to_csv(os.path.join(root_folder, output_csv_name),index=False)
     print(f"✅ csv {output_csv_name} created!")

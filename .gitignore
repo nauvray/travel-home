@@ -5,10 +5,16 @@
 .DS_Store
 __MACOSX
 # Jupiter Notebook #
+notebooks/
+*.ipynb
 .pytest_cache
 __pycache__
 *checkpoint.ipynb
 *.ipynb_checkpoints
+
+# Files from data #
+notebooks/
+*.ipynb
 
 # Files from data #
 00-data/**/
