@@ -6,7 +6,7 @@ import os
 from multiprocessing import Process
 
 # nb of threads for // computing
-PARALLEL_COMPUTING_BATCH_SIZE = 3   # nombre de calculs en parrallele
+PARALLEL_COMPUTING_BATCH_SIZE = 3
 
 def preprocess(root_folder : str, csv_name : str, df : pd.DataFrame):
     # filter outdoor images
@@ -26,7 +26,7 @@ def preprocess_csv_task(root_folder : str, csv_name : str) -> None:
     # df : img lat lon hexa cellid + storage path
     df = utils.get_df_from_csv(root_folder, csv_name)
     df = utils.add_storage_path(df)
-    # df = df.head(200)
+    df = df[0:10].reset_index(drop=True)
     preprocess(root_folder, csv_name, df)
 
 def preprocess_csv(csv_names : list)-> None:
@@ -45,8 +45,9 @@ def preprocess_csv(csv_names : list)-> None:
 
 
 if __name__ == '__main__':
-    root_folder = 'gs://travel-home-bucket/data_csv/data_csv_hashed/'#a changer avec le gsutil
+    root_folder = '../../00-data/pre_process3/' ## TO CHANGE
     start_time = time.time()
-    csv_names = [filename for filename in os.listdir(root_folder) if filename.startswith("meta_shard_")]#verifier que le nom est bien metashard
+    csv_names = [filename for filename in os.listdir(root_folder) if filename.startswith("meta_shard_")]
+    print(csv_names)
     preprocess_csv(csv_names)
     print('=====> TOTAL TIME:', round((time.time() - start_time)/60., 1), 'mn')
