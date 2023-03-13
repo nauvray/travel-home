@@ -4,8 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 from io import BytesIO
-from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input, decode_predictions
-from tensorflow.keras.applications.resnet import ResNet152
+# from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input, decode_predictions
+# from tensorflow.keras.applications.resnet import ResNet152
 import time
 # PlacesCNN to predict the scene category, attribute, and class activation map in a single pass
 # by Bolei Zhou, sep 2, 2017
@@ -17,7 +17,6 @@ from torchvision import transforms as trn
 from torch.nn import functional as F
 import cv2
 from PIL import Image
-from google.cloud import storage
 from travel_home.params import *
 
 def load_npy_image(npy_path : str, npy_file : str) -> np.ndarray:
@@ -36,7 +35,7 @@ def get_df_from_csv(csv_path : str, csv_name : str) -> pd.DataFrame:
 
 def add_storage_path(df : pd.DataFrame) -> pd.DataFrame:
     df_edit = df.copy()
-    df_edit['storage_filename'] = df_edit.apply(lambda x: f"gs://{BUCKET_NAME}/npy/" + str(x.cellid) + "/" + x.img.strip('.jpg') + '.npy', axis=1)
+    df_edit['storage_filename'] = df_edit.apply(lambda x: f"gs://travel-home-bucket/npy/{str(x.cellid)}/{x.img.strip('.jpg')}.npy", axis=1)
     return df_edit
 
 def display_image_from_hexa(hexa : str) -> None:
@@ -63,17 +62,17 @@ def resize_image(image_array : np.ndarray, target_size : tuple) -> np.ndarray:
 def get_csv_number(csv_name : str) -> str :
     return csv_name.split('_')[2].strip('.csv')
 
-def predict_image_tags(image_array : np.ndarray, tags_number : int = 10) -> None:
-    '''output the tags for image using ResNet152 model'''
-    resized_img_array = resize_image(image_array, (224, 224))
-    model = ResNet152(weights='imagenet')
-    X = np.expand_dims(resized_img_array, axis=0)
-    # print("X shape", X.shape)
-    X_preproc = preprocess_input(X)
-    # print("X_preproc shape", X_preproc.shape)
-    preds = model.predict(X_preproc)
-    # decode the results into a list of tuples (class, description, probability)
-    print('Predicted:', decode_predictions(preds, top=tags_number)[0])
+# def predict_image_tags(image_array : np.ndarray, tags_number : int = 10) -> None:
+#     '''output the tags for image using ResNet152 model'''
+#     resized_img_array = resize_image(image_array, (224, 224))
+#     model = ResNet152(weights='imagenet')
+#     X = np.expand_dims(resized_img_array, axis=0)
+#     # print("X shape", X.shape)
+#     X_preproc = preprocess_input(X)
+#     # print("X_preproc shape", X_preproc.shape)
+#     preds = model.predict(X_preproc)
+#     # decode the results into a list of tuples (class, description, probability)
+#     print('Predicted:', decode_predictions(preds, top=tags_number)[0])
 
 def get_image_from_hexa(hexa : str) -> Image:
     return Image.open(BytesIO(bytes.fromhex(hexa)))
@@ -231,7 +230,7 @@ def create_tags(input_img, model, labels_IO, labels_attribute, W_attribute, clas
     idx_a = np.argsort(responses_attribute)
     scene_attrs = ', '.join([labels_attribute[idx_a[i]] for i in range(-1,-10,-1)])
     # print('--SCENE ATTRIBUTES:', scene_attrs)
-    return outdoor
+    return outdoor, cat_attrs, scene_attrs
 
     # generate class activation mapping
     # print('Class activation map is saved as cam.jpg')
