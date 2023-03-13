@@ -17,3 +17,4 @@ torchvision
 opencv-python
 gcsfs
 fsspec
+fastapi
