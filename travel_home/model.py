@@ -11,74 +11,59 @@ from preprocess.utils import recursion_change_bn, returnTF
 import torch
 import torch.nn as nn
 from torch.autograd import Variable as V
-import torchvision.models as models
 from torchvision import transforms
 from torchvision import datasets, transforms
 import torch.optim as optim
-import torch.utils.data as torchdata
+from travel_home.params import *
 
 
-def npy_loader(path):
-    im = Image.fromarray(np.load(path))
-    return im
+MINIMUM_NB_OF_IMAGES = 10
 
-# data input
-def creation_folder(root):
+def npy_loader(path : str) -> Image:
+    image = Image.fromarray(np.load(path))
+    return image
 
-    origin = os.path.join(root, 'npy')
-    train_images_path = os.path.join(root, 'train')
-    val_images_path = os.path.join(root, 'val')
-
+def copy_folder_task(origin : str, destination : str, is_train : bool) -> None:
     source = os.path.join(origin, '.')
-    cmd = 'cp -R "%s" "%s"' % (source, train_images_path)
-    status = subprocess.call([cmd, source, train_images_path], shell=True)
+    cmd = 'cp -R "%s" "%s"' % (source, destination)
+    subprocess.call([cmd, source, destination], shell=True)
 
-    cmd = 'cp -R "%s" "%s"' % (source, val_images_path)
-    status = subprocess.call([cmd, source, val_images_path], shell=True)
-
-
-    subdirs_train = [f.path for f in os.scandir(train_images_path) if f.is_dir()]
-    # print(subdirs_train)
     folders_to_remove = []
-    for subdir in subdirs_train:
-        # print(subdir)
+    subdirs = [f.path for f in os.scandir(destination) if f.is_dir()]
+
+    for subdir in subdirs:
         files = os.scandir(subdir)
         nb_files = 0
         for path in os.scandir(subdir):
             if path.is_file():
                 nb_files += 1
-        if nb_files < 3:
+        if nb_files < MINIMUM_NB_OF_IMAGES:
             folders_to_remove.append(subdir)
         else:
             for index, file in enumerate(files):
-                if index+1 >= nb_files * 0.7:
-                    print(file)
-                    os.remove(file)
+                if is_train:
+                    if index + 1 >= nb_files * 0.7:
+                        os.remove(file)
+                else: # validation set
+                    if index + 1 < nb_files * 0.7:
+                        os.remove(file)
 
     for folder in folders_to_remove:
         shutil.rmtree(folder)
 
-    folders_val_to_remove = []
-    subdirs_val = [f.path for f in os.scandir(val_images_path) if f.is_dir()]
-    folders_val_to_remove = []
-    for subdir in subdirs_val:
-        files = os.scandir(subdir)
-        nb_files = 0
-        for path in os.scandir(subdir):
-            if path.is_file():
-                nb_files += 1
-        if nb_files < 3:
-            folders_val_to_remove.append(subdir)
-        else:
-            for index, file in enumerate(files):
-                if index+1 < nb_files * 0.7:
-                    os.remove(file)
-    for folder in folders_val_to_remove:
-        shutil.rmtree(folder)
-
     return None
 
-def input_train(data_dir):
+def copy_folder(root : str) -> None:
+    origin = os.path.join(root, 'npy')
+    train_images_path = os.path.join(root, 'train')
+    val_images_path = os.path.join(root, 'val')
+
+    # copy of npy folder in "train" and "test"
+    copy_folder_task(origin, train_images_path, True)
+    copy_folder_task(origin, val_images_path, False)
+    return None
+
+def input_train(data_dir : str):
     data_transforms = {
         'train': transforms.Compose([
         transforms.Resize((224,224)),
@@ -96,6 +81,7 @@ def input_train(data_dir):
     dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=4, shuffle=True, num_workers=4) for x in ['train', 'val']}
     dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
     class_names = image_datasets['train'].classes
+    #len_class_names = len(class_names)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -114,8 +100,8 @@ def load_model2(device):
         os.system('wget https://raw.githubusercontent.com/csailvision/places365/master/wideresnet.py')
 
     # checkpoint
-    import wideresnet
-    model = wideresnet.resnet18(num_classes=365)
+    from preprocess import wideresnet
+    model = wideresnet.resnet18(num_classes=365,)
     checkpoint = torch.load(model_file, map_location=lambda storage, loc: storage)
     state_dict = {str.replace(k,'module.',''): v for k,v in checkpoint['state_dict'].items()}
     model.load_state_dict(state_dict)
@@ -131,8 +117,13 @@ def load_model2(device):
 
     # layer to predict the class -- last layer
     num_ftrs = model.fc.in_features
-    model.fc = nn.Linear(num_ftrs, 2, False)
-    #model.fc = nn.ReLU(inplace=False) #### RELU A reintégrer sans que ça bug
+
+    model.fc = nn.Sequential(
+          nn.Linear(num_ftrs, 800),
+          nn.ReLU(inplace=True),
+          nn.Linear(800, 2),
+          nn.ReLU(inplace=True)
+        )
 
     model = model.to(device)
 
@@ -212,19 +203,23 @@ def predict(img, class_names):
     _, preds = torch.max(outputs, 1)
     # prediction de la classe de l'image
     coeff = outputs.detach().numpy()[0]
-    df = pd.DataFrame({'probability': coeff, 'sell_id': class_names})
+    df = pd.DataFrame({'probability': coeff, 'cellid': class_names})
     df['probability'] = df['probability'].apply(logit2prob)
     df = df.sort_values(by = 'probability', ascending = False)
     df = df.reset_index(drop=True)
+    api_dict = df.to_dict()
     print('👉 dataframe of the prediction: ')
     print(df)
     print('🎉 class predicted: ', class_names[preds])
-    return df
+    print('dict:', api_dict)
+    return df, api_dict
 
 if __name__ == '__main__':
-    subprocess.run('gsutil -m cp -r gs://$BUCKET_NAME/npy/ ~/code/hortense-jallot/travel-home/00-data/download', shell=True)
-    data_dir = '../00-data/download/'
-    creation_folder(data_dir)
+    # get npy images in gcs
+    source = f"gs://{BUCKET_NAME}/npy/"
+    data_dir="../00-data/download/"
+    subprocess.call(['gsutil','-m','cp','-r', source, data_dir], shell=True)
+    copy_folder(data_dir)
     img = '../00-data/hymenoptera_data/val/6a00d8341c630a53ef00e553d0beb18834-800wi.jpg'
     data_dir, image_datasets, dataloaders, dataset_sizes, device, class_names = input_train(data_dir)
     model2, criterion, optimizer = load_model2(device) # load model
