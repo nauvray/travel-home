@@ -16,4 +16,5 @@ torch
 torchvision
 opencv-python
 gcsfs
-ffspec
+fsspec
+fastapi
