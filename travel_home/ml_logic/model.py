@@ -43,11 +43,9 @@ def prepare_train_val_folders(data_dir : str) -> None:
         return None
 
     if not os.path.isdir(train_images_path) :
-        print(train_images_path)
         os.mkdir(train_images_path)
 
     if not os.path.isdir(val_images_path):
-        print(train_images_path)
         os.mkdir(val_images_path)
 
     folders_to_remove = []

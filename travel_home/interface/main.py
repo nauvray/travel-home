@@ -3,11 +3,11 @@ from travel_home.ml_logic import model as md
 from torchvision import datasets
 import os
 
-def train(data_dir : str, num_epochs : int):
+def train(data_dir : str, num_epochs : int, force_train : bool):
     # load pre trained model if it exists
     model = registry.load_travel_home_model(data_dir)
 
-    if model is None:
+    if ((model is None) or force_train):
         # prepare inputs
         md.prepare_train_val_folders(data_dir)
         dataloaders, dataset_sizes = md.prepare_input_train(data_dir)
@@ -31,5 +31,5 @@ if __name__ == '__main__':
     img_to_predict_path = "../../00-data/seychelles.jpg"
 
     data_dir = os.path.join(data_dir, "npy")
-    train(data_dir, num_epochs)
+    train(data_dir, num_epochs, force_train=True)
     predict(data_dir, img_to_predict_path)
