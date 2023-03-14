@@ -14,6 +14,7 @@ from torchvision import datasets, transforms
 import torch.optim as optim
 from travel_home.params import *
 from PIL import Image
+from travel_home.ml_logic import utils
 # from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input, decode_predictions
 # from tensorflow.keras.applications.resnet import ResNet152
 
@@ -26,7 +27,7 @@ import torch
 from torch.autograd import Variable as V
 from torchvision import transforms as trn
 from torch.nn import functional as F
-import utils
+from travel_home.ml_logic import wideresnet
 
 MINIMUM_NB_OF_IMAGES = 10
 
@@ -42,6 +43,7 @@ def copy_folder_task(origin : str, destination : str, is_train : bool) -> None:
     folders_to_remove = []
     subdirs = [f.path for f in os.scandir(destination) if f.is_dir()]
 
+    # loop in cellid folders
     for subdir in subdirs:
         files = os.scandir(subdir)
         nb_files = 0
@@ -64,17 +66,21 @@ def copy_folder_task(origin : str, destination : str, is_train : bool) -> None:
 
     return None
 
-def copy_folder(root : str) -> None:
-    origin = os.path.join(root, 'npy')
-    train_images_path = os.path.join(root, 'train')
-    val_images_path = os.path.join(root, 'val')
+def prepare_train_val_folders(data_dir : str) -> None:
+    # copy npy images gcs --> locally
+    source=f"gs://{BUCKET_NAME}/npy/"
+    subprocess.call(['gsutil','-m','cp','-r', source, data_dir], shell=True)
 
-    # copy of npy folder in "train" and "test"
+    # copy npy folder in "train" and "test" folders
+    origin = os.path.join(data_dir, 'npy')
+    train_images_path = os.path.join(data_dir, 'train')
+    val_images_path = os.path.join(data_dir, 'val')
+
     copy_folder_task(origin, train_images_path, True)
     copy_folder_task(origin, val_images_path, False)
     return None
 
-def input_train(data_dir : str):
+def images_transformer(x):
     data_transforms = {
         'train': transforms.Compose([
         transforms.Resize((224,224)),
@@ -87,17 +93,17 @@ def input_train(data_dir : str):
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ]),
     }
+    return data_transforms[x]
 
-    image_datasets = {x: datasets.DatasetFolder(os.path.join(data_dir, x), loader=npy_loader, extensions=['.npy'], transform=data_transforms[x])  for x in ['train', 'val']}
+def prepare_input_train(data_dir : str):
+    image_datasets = {x: datasets.DatasetFolder(os.path.join(data_dir, x), loader=npy_loader, extensions=['.npy'], transform=images_transformer(x)) for x in ['train', 'val']}
     dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=4, shuffle=True, num_workers=4) for x in ['train', 'val']}
     dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
-    class_names = image_datasets['train'].classes
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-    return dataloaders, dataset_sizes, device, class_names
+    # class_names = image_datasets['train'].classes
+    return dataloaders, dataset_sizes
 
 features_blobs = []
-def load_model2(device):
+def load_model():
     features_blobs.clear()
 
     # transfer learning : resnet18 trained on places365
@@ -107,7 +113,6 @@ def load_model2(device):
         os.system('wget https://raw.githubusercontent.com/csailvision/places365/master/wideresnet.py')
 
     # checkpoint
-    import wideresnet
     model = wideresnet.resnet18(num_classes=365)
     checkpoint = torch.load(model_file, map_location=lambda storage, loc: storage)
     state_dict = {str.replace(k,'module.',''): v for k,v in checkpoint['state_dict'].items()}
@@ -132,16 +137,17 @@ def load_model2(device):
           nn.ReLU(inplace=True)
         )
 
+    return model
+
+def train_model(dataloaders, dataset_sizes, model, num_epochs):
+    since = time.time()
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
     # model params
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.fc.parameters(), lr=0.001, momentum=0.9)
-
-    return model, criterion, optimizer
-
-def train_model2(dataloaders, dataset_sizes, device, model, criterion, optimizer, num_epochs=25):
-    since = time.time()
 
     for epoch in range(num_epochs):
         print(f'Epoch {epoch}/{num_epochs - 1}')
@@ -198,17 +204,17 @@ def logit2prob(logit):
   prob = odds / (1 + odds)
   return(prob)
 
-def predict(img : str, class_names : list):
+def predict(model, img_path, class_names):
     # preprocess the image
     tf = utils.returnTF()
-    input_img = Image.open(img)
+    input_img = Image.open(img_path)
     input_img = V(tf(input_img).unsqueeze(0))
     # predict the class of the image
-    outputs = model2(input_img)
+    outputs = model(input_img)
     _, preds = torch.max(outputs, 1)
     # prediction de la classe de l'image
     coeff = outputs.detach().numpy()[0]
-    df = pd.DataFrame({'probability': coeff, 'sell_id': class_names})
+    df = pd.DataFrame({'probability': coeff, 'cellid': class_names})
     df['probability'] = df['probability'].apply(logit2prob)
     df = df.sort_values(by = 'probability', ascending = False)
     df = df.reset_index(drop=True)
@@ -217,16 +223,18 @@ def predict(img : str, class_names : list):
     print('🎉 class predicted: ', class_names[preds])
     return df
 
-if __name__ == '__main__':
-    # get npy images in gcs
-    source=f"gs://{BUCKET_NAME}/npy/"
-    data_dir="../00-data/download/"
-    subprocess.call(['gsutil','-m','cp','-r', source, data_dir], shell=True)
-    copy_folder(data_dir)
-
-    dataloaders, dataset_sizes, device, class_names = input_train(data_dir)
-    model2, criterion, optimizer = load_model2(device) # load model
-    train_model2(dataloaders, dataset_sizes, device, model2, criterion, optimizer, num_epochs=5) # train model
-
-    img = '../00-data/hymenoptera_data/val/6a00d8341c630a53ef00e553d0beb18834-800wi.jpg'
-    predict(img, class_names) # predict
+# if __name__ == '__main__':
+#     data_dir="../00-data/download/"
+#     prepare_train_val_folders(data_dir)
+#     # prepare inputs
+#     dataloaders, dataset_sizes = prepare_input_train(data_dir)
+#     # load model
+#     model = load_model()
+#     # train model
+#     train_model(dataloaders, dataset_sizes, model, num_epochs=5)
+#      # predict
+#     img = '../00-data/hymenoptera_data/val/6a00d8341c630a53ef00e553d0beb18834-800wi.jpg'
+#     train_folders = datasets.DatasetFolder(os.path.join(data_dir, "train"), loader=npy_loader, extensions=['.npy'], transform=images_transformer()["train"])
+#     print(train_folders.targets)
+#     print(train_folders.classes)
+#     predict(model, img, train_folders.classes)

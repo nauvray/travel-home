@@ -4,6 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 from io import BytesIO
+import subprocess
+from travel_home.params import *
 # from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input, decode_predictions
 # from tensorflow.keras.applications.resnet import ResNet152
 
@@ -15,7 +17,6 @@ from torch.autograd import Variable as V
 from torchvision import transforms as trn
 from PIL import Image
 from torch.nn import functional as F
-
 
 def load_npy_image(npy_path : str, npy_file : str) -> np.ndarray:
     '''load image (numpy.array) from npy file'''
@@ -85,6 +86,44 @@ def get_image_from_npy(npy_path : str, npy_file : str) -> Image:
     img = Image.fromarray(image_array)
     return img
 
+def get_df_from_preproc_csv(local_folder : str, preproc_csv_folder : str) -> pd.DataFrame:
+    preproc_csv_folder = f"gs://{BUCKET_NAME}/preproc_csv"
+    # store csv locally
+    subprocess.call(['gsutil', '-m', 'cp', '-r', preproc_csv_folder, local_folder])
+    # get all preproc df and concatenate them
+    appended_df = []
+    for root, dirs, files in os.walk(preproc_csv_folder):
+        for file in files:
+            if (file.startswith("pre_proc_data")):
+                df = pd.read_csv(file)
+                # store df in list
+                appended_df.append(df)
+    # create a single df
+    df_all = pd.concat(appended_df)
+    return df_all
+
+def get_nb_images_per_geohash(df : pd.DataFrame) -> pd.DataFrame:
+    df_count_per_geohash = df[['cellid']].groupby('cellid').count()
+    return df_count_per_geohash
+
+# gs://travel-home-bucket/npy/5180949536192856064/a6_c4_3038144879.npy
+def display_image_from_image_uri(image_uri : str, local_folder : str) -> None:
+    # store npy image locally
+    subprocess.call(['gsutil', '-m', 'cp', '-r', image_uri, local_folder])
+    img_array = load_npy_image(local_folder, image_uri.split('/')[-1])
+    plt.imshow(img_array)
+    plt.show()
+
+def display_random_images_for_geohash(df : pd.DataFrame, geohash : int) -> None:
+    df_geoshash = df[df.cellid == geohash]
+    nb_images = 4
+    # display nb_images for the geohash
+    for i in range(nb_images - 1):
+        plt.subplot(nb_images, 1, count)
+        display_image_from_image_uri(df_geoshash.storage_filename[i])
+        plt.xticks(())
+        plt.yticks(())
+        count += 1
 
 ########################################################################
 ### Git hub link https://github.com/CSAILVision/places365/
