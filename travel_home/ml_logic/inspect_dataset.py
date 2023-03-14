@@ -5,23 +5,15 @@ from PIL import Image
 from io import BytesIO
 import matplotlib.pyplot as plt
 import msgpack
-import os
 import PIL.Image as Image
 import seaborn as sns
 import geopandas as gpd
 from pathlib import Path
 
-def load_data_csv(path_data_csv:str,limit:int) ->None:
-    path_data_csv =Path('../00-data/data_csv')
-    for i in range(limit):
-        if i ==0:
-            df_meta=pd.read_csv(os.path.join(path_data_csv,f'meta_shard_{i}.csv'))
-        else:
-            df_temp=pd.read_csv(os.path.join(path_data_csv,f'meta_shard_{i}.csv'))
-            df_meta=pd.concat([df_meta,df_temp])
-    return
-
 def plot_25_pics(path_data_csv:str) ->None:
+    '''
+    Plot randomly 25pics from a csv file containing the data and approximately 4500 pictures
+    '''
     i=np.random.randint(0,141)
     df_meta=pd.read_csv(f'{path_data_csv}/meta_shard_{i}.csv')
 
@@ -41,15 +33,23 @@ def plot_25_pics(path_data_csv:str) ->None:
     return
 
 def extract_first_250_pics(path_data_csv:str) ->None:
-    df_meta=pd.read_csv(f'{path_data_csv}/meta_shard_0.csv')
+    '''
+    Extract only 250 pictures from the csv file
+    '''
+    file_name = 'meta_shard_0.csv'
+    df_meta=pd.read_csv(f'{path_data_csv}/{file_name}')
     for i in range(250):
         image =Image.open(BytesIO(bytes.fromhex(df_meta.data[i])))
         image.save(f'{path_data_csv}/../pictures/pict{i}.png')
     return
 
 def extract_all_pics(path_data_csv:str) ->None:
+    '''
+    Extract all the files from a csv (file_name) in the folder pointed by the path
+    '''
+    file_name = 'meta_shard_0.csv'
     for j in range (142):
-        df_meta=pd.read_csv(f'{path_data_csv}/meta_shard_0.csv')
+        df_meta=pd.read_csv(f'{path_data_csv}/{file_name}')
         for i in range(len(df_meta)):
             image =Image.open(BytesIO(bytes.fromhex(df_meta.data[i])))
             image.save(f'{path_data_csv}/../pictures/pict{i}.png')
@@ -58,6 +58,9 @@ def extract_all_pics(path_data_csv:str) ->None:
     return None
 
 def load_all_data_from_archive(path_to_archive:str) ->None:
+    '''
+    From a zipfile with msgpack files containing 30K pictures eachm extracting all the metadata from these files
+    '''
     df_meta=pd.DataFrame(columns=['img','lat','lon','data'],index=range(0))
     path_to_archive = Path(path_to_archive)
     with zipfile.ZipFile(path_to_archive, mode="r") as zip_folder:
@@ -77,18 +80,12 @@ def load_all_data_from_archive(path_to_archive:str) ->None:
                 df_meta=pd.DataFrame(columns=['img','lat','lon','data'],index=range(0))
     return
 
-def load_csv(path_to_csv:str) ->pd.DataFrame:
-    path_to_csv=Path(path_to_csv)
-    for i in range(142):
-        if i ==0:
-            df_meta=pd.read_csv(f'{path_to_csv}/meta_shard_{i}.csv')
-        else:
-            df_temp=pd.read_csv(f'{path_to_csv}/meta_shard_{i}.csv')
-            df_meta=pd.concat([df_meta,df_temp])
-    return df_meta
-
 def plot_worldmap(df_meta:pd.DataFrame) ->None:
-
+    '''
+    From the extracted metadata in load_all_data_from_archive,
+    we round every "lat" and "lon" by 0.1 and groupby the dataframe by "lat" and "lon".
+    Then we can display bubbles with a size relative the quantity of photo at each "lat" and "lon".
+    '''
     df_meta['qty']=1
     df_meta_gpd=df_meta.groupby(by=['lat','lon']).sum()
     df_meta_gpd.reset_index(inplace=True)
