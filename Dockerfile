@@ -6,7 +6,7 @@ RUN pip install --upgrade pip
 RUN pip install -r requirements
 
 # Install travel-home
-COPY travel-home travel-home
+COPY travel_home travel_home
 COPY setup.py setup.py
 RUN pip install .
 
@@ -14,4 +14,4 @@ RUN pip install .
 COPY Makefile Makefile
 # RUN make reset_local_files
 
-CMD uvicorn travel-home.api.fast:app --host 0.0.0.0 --port $PORT
+CMD uvicorn travel_home.api.fast:app --host 0.0.0.0 --port $PORT

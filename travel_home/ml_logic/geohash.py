@@ -1,34 +1,63 @@
 import pandas as pd
 import s2cell
-import s2sphere
 from s2sphere import CellId, LatLng, Cell
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
-import os
 from mpl_toolkits.basemap import Basemap
-
-def reduce_sample_csv(limit_max:int,path:str) ->None:
-    formated_path = Path(path)
-    df_sample_csv=pd.read_csv(formated_path)
-    df_sample_csv=df_sample_csv[0:limit_max]
-    df_sample_csv.to_csv(formated_path,index=False)
-    return df_sample_csv
+import os
 
 def load_sample_csv(path:str) ->pd.DataFrame:
+    '''
+    Loading one or several file into a DataFrame.
+    If the chosen path is targetting a file, only this file will be loaded.
+    If the path is targetting a folder all the csv files will be loaded only.
+    The function return a DataFrame
+    '''
     path = Path(path)
-    df_sample_csv=pd.read_csv(path)
-    df_sample_csv['cellid']='_'
-    df_sample_csv['count']=1
-    df_sample_csv['zoom']=1
+    if path.endswith('.csv'):
+        print('Start loading one file')
+        df_sample_csv=pd.read_csv(path)
+        df_sample_csv['cellid']='_'
+        df_sample_csv['count']=1
+        df_sample_csv['zoom']=1
+    else:
+        for i in range(len(os.listdir(path))):
+            file_list = os.listdir(path)
+            file_list_csv= [filename for filename in file_list if filename.endswith('.csv') ]
+            print(f'Start loading {len(file_list_csv)} files')
+            if i ==0:
+                df_sample_csv = pd.read_csv(file_list_csv[i])
+                df_sample_csv.drop(columns=['data'],inplace=True)
+                print(f'File {i} loaded')
+            else:
+                df_temp = pd.read_csv(file_list_csv[i])
+                df_temp.drop(columns=['data'],inplace=True)
+                df_sample_csv=pd.concat([df_sample_csv,df_temp],axis=0)
+                print(f'File {i} loaded')
     return df_sample_csv
 
 def check_output_hashed(df:pd.DataFrame) ->None:
+    '''
+    Checking that the DataFrame gave a cellid to every picture
+    '''
     print((df.cellid=='_').sum())
     return
 
-def geohashing_zoom_s2(start_zoom:int,end_zoom:int,threshold:int,path:str,all_files:bool,reduced:bool,limit_max:int) ->pd.DataFrame:
-    nb_files=142
+def geohashing_zoom_s2(start_zoom:int,end_zoom:int,threshold:int,path:str,all_files:bool) ->pd.DataFrame:
+    '''
+    Geohashing the region of the world linked to the dataset put as input. Here the dataset have been restricted to a square around France.
+    Latitude are constrained between 42 and 52, and longitude between -5 and 10.
+    First step is to call all the csv, load them and save them without the "data" column as an intermediate state.
+    Second step is to have a look at the global map, from "start_zoom" with the corresponding cellid and count how many photo there are in each square.
+    If there are more than "threshold" then the zoom increase, if not we close the cellid and give the cellid to each photo in the square.
+    Zoom steps are stopped at the "end_zoom" value.
+    Third step is used to save the cellid in every original csv.
+    '''
+    # Loading the files in DF and saving the csv without data
+    file_list = os.listdir(path)
+    file_list_csv= [filename for filename in file_list if filename.endswith('.csv') ]
+    nb_files=len(file_list_csv)
     if all_files == True :
         file_path = Path(f'{path}meta_shard_no_img.csv')
         if file_path.is_file():
@@ -61,10 +90,8 @@ def geohashing_zoom_s2(start_zoom:int,end_zoom:int,threshold:int,path:str,all_fi
                 df_sample['zoom']=1
                 df_sample.to_csv(f'{path}meta_shard_no_img.csv',index=False)
     else:
-        if reduced == True:
-            df_sample=reduce_sample_csv(limit_max,path)
-        else:
-            df_sample=load_sample_csv(path)
+        df_sample=load_sample_csv(path)
+    # Copy the df
     df_sample_csv=df_sample.copy()
     df_sample_csv.reset_index(inplace=True,drop=True)
     # Initialize the df to find geohash at start and start-1 zoom
@@ -90,11 +117,11 @@ def geohashing_zoom_s2(start_zoom:int,end_zoom:int,threshold:int,path:str,all_fi
                 df_sample_csv[f'geohash_{zoom+1}'] = df_sample_csv.apply(lambda x: s2cell.lat_lon_to_cell_id(x.lat,x.lon,zoom+1),axis=1)
             else:
                 next
+    # Saving the files with the adapted cellid depending on the geohash
     for k in range(len(df_sample_csv)):
         if df_sample_csv.cellid[k]=='_':
             df_sample_csv.loc[k,'cellid']=df_sample_csv.loc[k,f'geohash_{zoom+1}']
             df_sample_csv.loc[k,'zoom']=zoom+1
-    # df_sample_csv.drop(columns=[f'geohash_{zoom+1}'],inplace=True)
     for i in range(nb_files):
         df_temp = pd.read_csv(f'{path}meta_shard_{i}.csv')
         print(f'Loading file {i}')
@@ -105,6 +132,9 @@ def geohashing_zoom_s2(start_zoom:int,end_zoom:int,threshold:int,path:str,all_fi
     return df_sample_csv
 
 def create_df_squares(df_sample_csv:pd.DataFrame) ->pd.DataFrame:
+    '''
+    Find the coordinates of the squares of each cellid to prepare the mapping of the squares.
+    '''
     # Create cellid with only the list of Cellid present in the df
     df_cellid=df_sample_csv[['cellid','count']].copy()
     df_cellid=df_cellid.groupby('cellid').sum()
@@ -141,7 +171,9 @@ def create_df_squares(df_sample_csv:pd.DataFrame) ->pd.DataFrame:
     return df_cellid
 
 def plot_squares(df_cellid:pd.DataFrame,path:str):
-    fig = plt.Figure()
+    '''
+    From the previous dataframe in create_df_squares we plot each square on a map using Basemap
+    '''
     map = Basemap(projection='cyl', resolution = 'i', llcrnrlon=-5, \
                 llcrnrlat=42, urcrnrlon=10, urcrnrlat=52)
     map.drawcoastlines()
@@ -155,3 +187,26 @@ def plot_squares(df_cellid:pd.DataFrame,path:str):
     plt.show()
     plt.savefig(f'{path}Map.png')
     return
+
+def geohash_csv(start_zoom:int,end_zoom:int,threshold:int,path:str,all_files:bool) ->None:
+    '''
+    Global function calling successively the function to :
+        - Geohash an area
+        - Create a df with the coordinates of the corner of each cellid
+        - Plot these squares and save the image
+    '''
+    df_geohashed=geohashing_zoom_s2(start_zoom,end_zoom,threshold,path,all_files)
+    df_cellid =create_df_squares(df_geohashed)
+    plot_squares(df_cellid,path)
+    return
+
+if __name__ == '__main__':
+    path = '../00-data/data_csv/'
+    # path = 'gs://travel-home-bucket/data-csv/'
+    start_zoom = 5
+    end_zoom = 18
+    threshold = 500
+    reduced = False
+    all_files=True
+    limit_max=1500
+    geohash_csv(start_zoom,end_zoom,threshold,path,all_files,reduced,limit_max)
