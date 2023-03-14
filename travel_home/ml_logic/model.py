@@ -97,13 +97,12 @@ def images_transformer(x):
 
 def prepare_input_train(data_dir : str):
     image_datasets = {x: datasets.DatasetFolder(os.path.join(data_dir, x), loader=npy_loader, extensions=['.npy'], transform=images_transformer(x)) for x in ['train', 'val']}
-    dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=4, shuffle=True, num_workers=4) for x in ['train', 'val']}
-    dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
-    # class_names = image_datasets['train'].classes
-    return dataloaders, dataset_sizes
+    dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=10, shuffle=True, num_workers=4) for x in ['train', 'val']}
+    return dataloaders, image_datasets
 
 features_blobs = []
-def load_model():
+
+def load_model(image_datasets):
     features_blobs.clear()
 
     # transfer learning : resnet18 trained on places365
@@ -113,6 +112,7 @@ def load_model():
         os.system('wget https://raw.githubusercontent.com/csailvision/places365/master/wideresnet.py')
 
     # checkpoint
+    import wideresnet
     model = wideresnet.resnet18(num_classes=365)
     checkpoint = torch.load(model_file, map_location=lambda storage, loc: storage)
     state_dict = {str.replace(k,'module.',''): v for k,v in checkpoint['state_dict'].items()}
@@ -130,21 +130,24 @@ def load_model():
     # layer to predict the class -- last layer
     num_ftrs = model.fc.in_features
 
+    class_number = len(image_datasets['train'].classes)
+
     model.fc = nn.Sequential(
           nn.Linear(num_ftrs, 800),
           nn.ReLU(inplace=True),
-          nn.Linear(800, 2),
+          nn.Linear(800, class_number),
           nn.ReLU(inplace=True)
         )
 
     return model
 
-def train_model(dataloaders, dataset_sizes, model, num_epochs):
+
+def train_model(dataloaders, image_datasets, model, num_epochs):
     since = time.time()
 
+    dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
-
     # model params
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.fc.parameters(), lr=0.001, momentum=0.9)
