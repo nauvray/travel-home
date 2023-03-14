@@ -8,13 +8,14 @@ def train(data_dir : str, num_epochs : int, force_train : bool):
     model = registry.load_travel_home_model(data_dir)
 
     if ((model is None) or force_train):
+        print("model training...")
         # prepare inputs
         md.prepare_train_val_folders(data_dir)
-        dataloaders, dataset_sizes = md.prepare_input_train(data_dir)
+        dataloaders, image_datasets = md.prepare_input_train(data_dir)
         # load model
-        model = md.load_model()
+        model = md.load_model(image_datasets)
         # train model
-        model = md.train_model(dataloaders, dataset_sizes, model, num_epochs=num_epochs)
+        model = md.train_model(dataloaders, image_datasets, model, num_epochs=num_epochs)
         # Save model weights locally and in GCS
         registry.save_travel_home_model(data_dir, model=model)
 
@@ -26,7 +27,7 @@ def predict(data_dir : str, img_path : str):
     md.predict(model, img_path, train_folder.classes)
 
 if __name__ == '__main__':
-    data_dir = "../../00-data/test/"
+    data_dir = "/mnt/disks/disk-1/model-1/"
     num_epochs = 5
     img_to_predict_path = "../../00-data/seychelles.jpg"
 
