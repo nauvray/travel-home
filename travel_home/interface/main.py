@@ -29,7 +29,8 @@ def predict(data_dir : str, img_path : str):
 if __name__ == '__main__':
     data_dir = "/mnt/disks/disk-1/model-1/"
     num_epochs = 5
-    img_to_predict_path = '../../00-data/seychelles.jpg'
+    img_to_predict_path = "../../00-data/seychelles.jpg"
 
-    train(data_dir, num_epochs)
+    data_dir = os.path.join(data_dir, "npy")
+    train(data_dir, num_epochs, force_train=True)
     predict(data_dir, img_to_predict_path)

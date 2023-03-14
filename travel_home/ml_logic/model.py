@@ -27,7 +27,6 @@ import torch
 from torch.autograd import Variable as V
 from torchvision import transforms as trn
 from torch.nn import functional as F
-from travel_home.ml_logic import wideresnet
 
 MINIMUM_NB_OF_IMAGES = 10
 
@@ -35,16 +34,27 @@ def npy_loader(path : str) -> Image:
     image = Image.fromarray(np.load(path))
     return image
 
-def copy_folder_task(origin : str, destination : str, is_train : bool) -> None:
-    source = os.path.join(origin, '.')
-    cmd = 'cp -R "%s" "%s"' % (source, destination)
-    subprocess.call([cmd, source, destination], shell=True)
+def prepare_train_val_folders(data_dir : str) -> None:
+    train_images_path = os.path.join(data_dir, 'train')
+    val_images_path = os.path.join(data_dir, 'val')
+
+    if (os.path.isdir(train_images_path) and os.path.isdir(val_images_path)):
+        print('Train and val folders already exist')
+        return None
+
+    if not os.path.isdir(train_images_path) :
+        os.mkdir(train_images_path)
+
+    if not os.path.isdir(val_images_path):
+        os.mkdir(val_images_path)
 
     folders_to_remove = []
-    subdirs = [f.path for f in os.scandir(destination) if f.is_dir()]
+    subdirs = [f.path for f in os.scandir(data_dir) if f.is_dir()]
 
     # loop in cellid folders
     for subdir in subdirs:
+        if (subdir.split("/")[-1] == "val" or subdir.split("/")[-1] == "train"):
+            continue
         files = os.scandir(subdir)
         nb_files = 0
         for path in os.scandir(subdir):
@@ -54,30 +64,22 @@ def copy_folder_task(origin : str, destination : str, is_train : bool) -> None:
             folders_to_remove.append(subdir)
         else:
             for index, file in enumerate(files):
-                if is_train:
-                    if index + 1 >= nb_files * 0.7:
-                        os.remove(file)
-                else: # validation set
-                    if index + 1 < nb_files * 0.7:
-                        os.remove(file)
+                if index + 1 >= nb_files * 0.7:
+                    destination_folder = os.path.join(train_images_path, file.path.split("/")[-2])
+                    if not os.path.isdir(destination_folder):
+                        os.mkdir(destination_folder)
+                    destination = os.path.join(destination_folder, file.name)
+                    os.replace(file.path, destination)
+                if index + 1 < nb_files * 0.7:
+                    destination_folder = os.path.join(val_images_path, file.path.split("/")[-2])
+                    if not os.path.isdir(destination_folder):
+                        os.mkdir(destination_folder)
+                    destination = os.path.join(destination_folder, file.name)
+                    os.replace(file.path, destination)
 
-    for folder in folders_to_remove:
-        shutil.rmtree(folder)
+    # for folder in folders_to_remove:
+    #     shutil.rmtree(folder)
 
-    return None
-
-def prepare_train_val_folders(data_dir : str) -> None:
-    # copy npy images gcs --> locally
-    source=f"gs://{BUCKET_NAME}/npy/"
-    subprocess.call(['gsutil','-m','cp','-r', source, data_dir], shell=True)
-
-    # copy npy folder in "train" and "test" folders
-    origin = os.path.join(data_dir, 'npy')
-    train_images_path = os.path.join(data_dir, 'train')
-    val_images_path = os.path.join(data_dir, 'val')
-
-    copy_folder_task(origin, train_images_path, True)
-    copy_folder_task(origin, val_images_path, False)
     return None
 
 def images_transformer(x):
@@ -225,19 +227,3 @@ def predict(model, img_path, class_names):
     print(df)
     print('🎉 class predicted: ', class_names[preds])
     return df
-
-# if __name__ == '__main__':
-#     data_dir="../00-data/download/"
-#     prepare_train_val_folders(data_dir)
-#     # prepare inputs
-#     dataloaders, dataset_sizes = prepare_input_train(data_dir)
-#     # load model
-#     model = load_model()
-#     # train model
-#     train_model(dataloaders, dataset_sizes, model, num_epochs=5)
-#      # predict
-#     img = '../00-data/hymenoptera_data/val/6a00d8341c630a53ef00e553d0beb18834-800wi.jpg'
-#     train_folders = datasets.DatasetFolder(os.path.join(data_dir, "train"), loader=npy_loader, extensions=['.npy'], transform=images_transformer()["train"])
-#     print(train_folders.targets)
-#     print(train_folders.classes)
-#     predict(model, img, train_folders.classes)
