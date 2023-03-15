@@ -171,6 +171,7 @@ if get_prediction == True:
             columns[1].image('proposal_1.jpg')
 
 
+
 # if __name__ == '__main__':
 #     # get npy images in gcs
 #     geohash = 5169846499198107648

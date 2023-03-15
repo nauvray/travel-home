@@ -23,7 +23,7 @@ notebooks/
 *.jpg
 *.msg
 *.zip
-travel-home-app/im_cell_id
+travel-home-app/test_app_hortense/im_cell_id
 
 # inteliJ #
 .idea
