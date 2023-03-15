@@ -1,0 +1,15 @@
+numpy==1.23.5
+pandas==1.5.3
+google-cloud-storage
+geopandas
+pathlib
+s2cell
+s2sphere
+torch
+gcsfs
+fsspec
+fastapi
+folium
+st_clickable_images
+streamlit_folium
+streamlit

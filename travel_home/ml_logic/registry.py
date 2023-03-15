@@ -1,10 +1,10 @@
 from google.cloud import storage
 from travel_home.params import *
-from travel_home.ml_logic import model
+from travel_home.ml_logic import model as md
 import torch
 import time
 
-def load_travel_home_model(local_registry_path):
+def load_travel_home_model():
     """
     Return a saved model from GCS (most recent one)
     Return None (but do not Raise) if no model found
@@ -14,25 +14,25 @@ def load_travel_home_model(local_registry_path):
     try:
         latest_blob = max(blobs, key=lambda x: x.updated)
         latest_blob_name = latest_blob.name.split("/")[-1]
-        latest_model_path = os.path.join(local_registry_path, latest_blob_name)
+        latest_model_path = os.path.join(WORKING_DIR, latest_blob_name)
         latest_blob.download_to_filename(latest_model_path)
 
         # Loading the model
-        resnet_model = model.load_model()
+        model = md.load_model()
         checkpoint = torch.load(latest_model_path)
-        resnet_model.load_state_dict(checkpoint)
+        model.load_state_dict(checkpoint)
 
         print(f"✅ Latest model {latest_blob_name} downloaded from cloud storage")
-        return resnet_model
+        return model
     except:
         print(f"\n❌ No model found on GCS bucket {BUCKET_NAME}")
         return None
 
-def save_travel_home_model(local_registry_path, model):
+def save_travel_home_model(model):
     # Saving the model locally
     # save the state of the model (i.e. the weights)
     timestamp = time.strftime("%Y%m%d-%H%M%S")
-    save_model_path = os.path.join(local_registry_path, f"{timestamp}.pth")
+    save_model_path = os.path.join(WORKING_DIR, f"{timestamp}.pth")
     torch.save(model.state_dict(), save_model_path)
 
     # save to gcs
