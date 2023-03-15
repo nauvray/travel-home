@@ -172,6 +172,7 @@ if get_prediction == True:
 
 
 
+
 # if __name__ == '__main__':
 #     # get npy images in gcs
 #     geohash = 5169846499198107648
