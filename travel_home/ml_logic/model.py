@@ -97,7 +97,7 @@ def images_transformer(x):
 
 def prepare_input_train(data_dir : str):
     image_datasets = {x: datasets.DatasetFolder(os.path.join(data_dir, x), loader=npy_loader, extensions=['.npy'], transform=images_transformer(x)) for x in ['train', 'val']}
-    dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=10, shuffle=True, num_workers=4) for x in ['train', 'val']}
+    dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=256, shuffle=True, num_workers=4) for x in ['train', 'val']}
     return dataloaders, image_datasets
 
 features_blobs = []
@@ -142,7 +142,7 @@ def load_model(image_datasets):
     return model
 
 
-def train_model(dataloaders, image_datasets, model, num_epochs):
+def train_model(dataloaders, image_datasets, model, data_dir, num_epochs):
     since = time.time()
 
     dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
@@ -189,14 +189,15 @@ def train_model(dataloaders, image_datasets, model, num_epochs):
                 # statistics
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data)
-
             epoch_loss = running_loss / dataset_sizes[phase]
             epoch_acc = running_corrects.double() / dataset_sizes[phase]
 
             print(f'{phase} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}')
 
         print()
-
+        timestamp = time.strftime("%Y%m%d-%H%M%S")
+        save_model_path = os.path.join(data_dir, f"{timestamp}_{epoch}.pth")
+        torch.save(model.state_dict(), save_model_path)
     time_elapsed = time.time() - since
     print(f'Training complete in {time_elapsed // 60:.0f}m {time_elapsed % 60:.0f}s')
 

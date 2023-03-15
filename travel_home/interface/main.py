@@ -15,7 +15,7 @@ def train(data_dir : str, num_epochs : int, force_train : bool):
         # load model
         model = md.load_model(image_datasets)
         # train model
-        model = md.train_model(dataloaders, image_datasets, model, num_epochs=num_epochs)
+        model = md.train_model(dataloaders, image_datasets, model, data_dir, num_epochs=num_epochs)
         # Save model weights locally and in GCS
         registry.save_travel_home_model(data_dir, model=model)
 
