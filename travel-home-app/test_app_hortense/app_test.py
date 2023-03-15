@@ -11,6 +11,10 @@ from folium import Circle
 import s2cell
 from geopy.geocoders import Nominatim
 from io import BytesIO
+import random
+import os
+import subprocess
+from travel_home.ml_logic.utils import get_image_from_npy
 
 # logo, nom de la page et background
 st.set_page_config(page_icon="logo.png", page_title="Travel Home", layout="wide")
@@ -34,7 +38,7 @@ st.image(image, width=120)
 title = '<p style="font-family:Cooper Black; color:Black; font-size: 50px">Travel Home</p>'
 st.markdown(title, unsafe_allow_html=True)
 
-sub_title = '<p style="color:#FFFFF; font-size: 25px">Find your dream travel destination at a train distance 🚃</p>'
+sub_title = '<p style="font-family:Helvetica, color:Black; font-size: 30px">Find your dream travel destination at a train distance</p>'
 st.markdown(sub_title, unsafe_allow_html=True)
 
 st.write(" ")
@@ -42,6 +46,16 @@ st.write(" ")
 st.write(" ")
 
 # bar de recherche et/ou upload de l'image
+# tabs_font_css = """
+# <style>
+# div[class*="stTextInput"] label {
+#   font-size: 30px;
+#   color: black;
+# }
+# </style>
+# """
+# st.write(tabs_font_css, unsafe_allow_html=True)
+
 columns = st.columns([7,3])
 selected = columns[0].text_input("Enter your dream destination (or just a keyword 😉)", "")
 
@@ -80,7 +94,7 @@ def get_map(df_test):
     df_select = df_test[df_test.new_weight > threshold]
     geolocator = Nominatim(user_agent="my-app")
     location = geolocator.geocode("France")
-    map_fr = folium.Map(location=[location.latitude, location.longitude], zoom_start=6)
+    map_fr = folium.Map(location=[location.latitude, location.longitude], zoom_start=5.3)
 
     for lat, lon, weight in zip(df_select['lat'], df_select['lon'], df_select['new_weight']):
         CircleMarker(location=[lat, lon],
@@ -99,11 +113,21 @@ def get_map(df_test):
 
 
 # output api test en attendant l'api
-data = {'cellid': [5180546946359623680, 5189765251846897664, 5180949848651726848],
+data = {'cellid': [5169846499198107648, 5171065032959590400, 5220109917347643392],
         'weight': [0.92, 0.74, 0.34]}
 df_test = pd.DataFrame(data, dtype='object')
 
 #st_folium(get_map(df_test), width=700, height=500)
+
+def random_images(geohash):
+    # get npy images in gcs
+    subprocess.call(['gsutil', '-m', 'cp', '-r', f'gs://travel-home-bucket/npy/{geohash}/', 'im_cell_id/'])
+    for i in range(2):
+        npy_file = (os.listdir(f"im_cell_id/{geohash}"))[i]
+        file_path = f"im_cell_id/{geohash}"
+        image =  get_image_from_npy(file_path, npy_file)
+        image.save(f'proposal_{i}.jpg')
+    return None
 
 if get_prediction == True:
     col1, col2, col3 = st.columns([5,3,1])
@@ -123,41 +147,38 @@ if get_prediction == True:
             map_1 = folium.Map(location=(df_test['lat'][0], df_test['lon'][0]),
             zoom_start=france_zoom+2,zoom_control=False)
             show_map_1 = st_folium(map_1,width=400,height=150)
+            random_images(int(df_test['cellid'][0]))
+            columns = st.columns(2)
+            columns[0].image('proposal_0.jpg')
+            columns[1].image('proposal_1.jpg')
         with col2:
             st.metric("Destination 2", f"{df_test['new_weight'][1]}% of similarities")
             map_1 = folium.Map(location=(df_test['lat'][1], df_test['lon'][1]),
             zoom_start=france_zoom+2,zoom_control=False)
             show_map_1 = st_folium(map_1,width=400,height=150)
+            random_images(int(df_test['cellid'][1]))
+            columns = st.columns(2)
+            columns[0].image('proposal_0.jpg')
+            columns[1].image('proposal_1.jpg')
         with col3:
             st.metric("Destination 3", f"{df_test['new_weight'][2]}% of similarities")
             map_1 = folium.Map(location=(df_test['lat'][2], df_test['lon'][2]),
             zoom_start=france_zoom+2,zoom_control=False)
             show_map_1 = st_folium(map_1,width=400,height=150)
+            random_images(int(df_test['cellid'][2]))
+            columns = st.columns(2)
+            columns[0].image('proposal_0.jpg')
+            columns[1].image('proposal_1.jpg')
 
 
-
-
-
-
-
-
-
-# def add_header_from_local():
-#     st.markdown(
-#     f"""
-#     <style>
-#     .stheader {{
-#         background-color:#FF5757);
-#     }}
-#     </style>
-#     """,
-#     unsafe_allow_html=True
-#     )
-# add_header_from_local()
-
-# html=("""<div class="header">
-#   <h1>Header</h1>
-#   <p>My supercool header</p>
-# </div>""")
-
-# st.components.v1.html(html, width=None, height=None, scrolling=False)
+# if __name__ == '__main__':
+#     # get npy images in gcs
+#     geohash = 5169846499198107648
+#     # subprocess.call(['gsutil', '-m', 'cp', '-r', f'gs://travel-home-bucket/npy/{geohash}/', 'im_cell_id/'])
+#     npy_file = random.choice( os.listdir(f"im_cell_id/{geohash}"))
+#     print(npy_file)
+#     file_path = f"im_cell_id/{geohash}"
+#     print(file_path)
+#     image =  get_image_from_npy(file_path, npy_file)
+#     print(image)
+#     image.save('dest1im1.jpg')
