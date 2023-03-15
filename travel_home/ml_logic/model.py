@@ -191,9 +191,11 @@ def train_model(dataloaders, model, num_epochs):
             print(f'{phase} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}')
 
         print()
-        timestamp=time.strftime("%Y%m%d-%H%H%S")
-        save_model_path=os.path.join(WORKING_DIR,f"{timestamp}_{epoch}.pth")
+
+        timestamp = time.strftime("%Y%m%d-%H%H%S")
+        save_model_path = os.path.join(WORKING_DIR,f"{timestamp}_{epoch}.pth")
         torch.save(model.state_dict(),save_model_path)
+
     time_elapsed = time.time() - since
     print(f'Training complete in {time_elapsed // 60:.0f}m {time_elapsed % 60:.0f}s')
 

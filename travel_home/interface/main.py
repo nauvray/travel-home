@@ -35,9 +35,12 @@ def predict(img_path : str):
     md.predict(model, img_path, load_class_names())
 
 if __name__ == '__main__':
+    data_dir = "/mnt/disks/disk-1/model-2/"
+    num_epochs = 50
     print("=====TRAINING======")
     train(num_epochs = 5, force_train=True)
 
-    img_to_predict_path = "../../00-data/seychelles.jpg"
-    print("====PREDICTION=====")
-    predict(img_to_predict_path)
+    # img_to_predict_path = "../../00-data/seychelles.jpg"
+    
+    # print("====PREDICTION=====")
+    # predict(img_to_predict_path)
