@@ -8,6 +8,7 @@ from return3.return3 import bubble_plot
 from streamlit_folium import st_folium
 import os
 from st_clickable_images import clickable_images
+from return3.return3_bis import plot_4pics_around
 
 # commande terminal =  streamlit run app/app.py
 
@@ -47,11 +48,6 @@ st.image(bandeau, caption='', use_column_width=True)
 # Titre de l'application
 ######################
 st.sidebar.markdown("## TRAVEL-HOME")
-
-
-#img_pres = Image.open('app/images/TravelHomeGoogle.png')
-#st.image(img_pres, caption='', use_column_width=True)
-
 
 title = "Dream travel destination at a train/car distance"
 center_title = f"<center><h1>{title}</h1></center>"
@@ -111,6 +107,8 @@ if selected:
             st.write('')
 
 
+# Avec la barre d'upload (image)
+################################
 
 else:
     st.write('')
@@ -131,7 +129,7 @@ else:
 
 
 #########################
-# Prediction Points sur la carte de France + Photos du même square/cellid
+# Prediction : Bubbles sur la carte de France + Photos du même square/cellid
 #########################
 
 
@@ -171,9 +169,12 @@ if image_uploaded:
 
 ## --> Transformation du dictionnaire (pred du modele)
 
-## si dictionnaire des predicts de Hortense se nomme prediction (avec une colonne 'probability' et une colonne 'sell_id')
+## si dictionnaire des predicts de Hortense se nomme prediction (avec une clé 'probability' et une clé 'sell_id')
+
+# !!!!!!!!!!!!!!!  Décommenter la 2ème ligne ci-dessous pour activer le DataFrame df_predict
+
 # construction du DataFrame relatif pour appliquer la fonction bubble_plot
-# df_predict = pd.DataFrame(prediction).rename(columns={'probability':'weight', 'sell_id' :'cellid'})
+# df_predict = pd.DataFrame(prediction,dtype='object').rename(columns={'probability':'weight', 'sell_id' :'cellid'})
 
 
 ## --> Affichage de la carte de france
@@ -184,13 +185,14 @@ if image_uploaded:
         st.write("")
 
     with col2:
-        data = {
-                'cellid': [5180546946359623680, 5189765251846897664, 5180949848651726848],
-                'weight': [0.92, 0.74, 0.34]
+        prediction = {
+                'cellid': [1343598811095760896, 5169868489430663168, 5218837438796922880],
+                'weight': [0.83, 0.56, 0.34]
                 }
 
-        df_test = pd.DataFrame(data,dtype='object')
-        st_folium(bubble_plot(df_test),width = 825)
+        df_predict = pd.DataFrame(prediction,dtype='object')
+        # ici prendre le df_predict recréé au-dessus après l'avoir activé (décommenté)
+        st_folium(bubble_plot(df_predict),width = 825)
 
     with col3:
         st.write("")
@@ -206,46 +208,38 @@ if image_uploaded:
 # Créer 3 colonnes d'égale largeur
     col1, col2, col3 = st.columns(3)
 
-    # Ajouter du contenu à la première colonne
+    # Ajouter du contenu à la première colonne  !!!!!!!! changer le DataFrame en prenant df_predict à la place de df_test
     with col1:
-
-        texte_1 = "Landscapes with 80% similarities"
+        weight_1 = df_predict['weight'][0]
+        texte_1 = f"Landscapes with {round(weight_1*100)}% similarities"
         centrer_texte_1 = f"<center><h3>{texte_1}</h3></center>"
 
         st.markdown(centrer_texte_1, unsafe_allow_html=True)
         st.write('')
 
+        fig_1 = plot_4pics_around(str(df_predict['cellid'][0]))
+        st.pyplot(fig_1)
 
-        img_test_path1 = 'app/images/bretagne.png'
-        img_test1 = Image.open(img_test_path1)
-        st.image(img_test1, caption='Your next french holidays', use_column_width=True)
-
-
-
-    # Ajouter du contenu à la deuxième colonne
+    # Ajouter du contenu à la deuxième colonne  !!!!!!!! changer le DataFrame en prenant df_predict à la place de df_test
     with col2:
-
-        texte_2 = "Landscapes with 50% similarities"
+        weight_2 = df_predict['weight'][1]
+        texte_2 = f'Landscapes with {round(weight_2*100)}% similarities'
         centrer_texte_2 = f"<center><h3>{texte_2}</h3></center>"
 
         st.markdown(centrer_texte_2, unsafe_allow_html=True)
         st.write('')
 
-        img_test_path2 = 'app/images/bretagne.png'
-        img_test2 = Image.open(img_test_path2)
-        st.image(img_test2, caption='Your next french holidays', use_column_width=True)
+        fig_2 = plot_4pics_around(str(df_predict['cellid'][1]))
+        st.pyplot(fig_2)
 
-
-
-    # Ajouter du contenu à la 3ème colonne
+    # Ajouter du contenu à la 3ème colonne  !!!!!!!! changer le DataFrame en prenant df_predict à la place de df_test
     with col3:
-
-        texte_3 = "Landscapes with 20% similarities"
+        weight_3 = df_predict['weight'][2]
+        texte_3 = f'Landscapes with {round(weight_3*100)}% similarities'
         centrer_texte_3 = f"<center><h3>{texte_3}</h3></center>"
 
         st.markdown(centrer_texte_3, unsafe_allow_html=True)
         st.write('')
 
-        img_test_path2 = 'app/images/bretagne.png'
-        img_test2 = Image.open(img_test_path2)
-        st.image(img_test2, caption='Your next french holidays', use_column_width=True)
+        fig_3 = plot_4pics_around(str(df_predict['cellid'][2]))
+        st.pyplot(fig_3)
