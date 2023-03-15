@@ -24,6 +24,7 @@ notebooks/
 *.msg
 *.zip
 
+
 # inteliJ #
 .idea
 *.gz
@@ -37,3 +38,5 @@ mlruns
 # Challengify - test challengification files
 *_challengify*
 00-data/
+
+**/wideresnet*

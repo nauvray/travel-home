@@ -1,36 +1,52 @@
 from travel_home.ml_logic import registry
 from travel_home.ml_logic import model as md
-from torchvision import datasets
 import os
+from travel_home.params import *
+import validators
+from PIL import Image
+import requests
 
-def train(data_dir : str, num_epochs : int, force_train : bool):
+
+def train(num_epochs : int, force_train : bool):
+    # add "npy" folder to data_dir as images are saved in "npy" folder in the bucket
+    data_dir = os.path.join(WORKING_DIR, "npy")
     # load pre trained model if it exists
-    model = registry.load_travel_home_model(data_dir)
+    model = registry.load_travel_home_model()
 
     if ((model is None) or force_train):
-        print("model training...")
+        if (model is None):
+            print("no model found, start training...")
+        else:
+            print("force model training...")
         # prepare inputs
         md.prepare_train_val_folders(data_dir)
-        dataloaders, image_datasets = md.prepare_input_train(data_dir)
+        dataloaders = md.prepare_input_train(data_dir)
         # load model
-        model = md.load_model(image_datasets)
+        model = md.load_model()
         # train model
-        model = md.train_model(dataloaders, image_datasets, model, num_epochs=num_epochs)
+        model = md.train_model(dataloaders, model, num_epochs=num_epochs)
         # Save model weights locally and in GCS
-        registry.save_travel_home_model(data_dir, model=model)
+        registry.save_travel_home_model(model=model)
+    else:
+        print("No training required")
 
-def predict(data_dir : str, img_path : str):
-    model = registry.load_travel_home_model(data_dir)
+def predict(image_path : str):
+    model = registry.load_travel_home_model()
     assert model is not None
 
-    train_folder = datasets.DatasetFolder(os.path.join(data_dir, "train"), loader=md.npy_loader, extensions=['.npy'], transform=md.images_transformer("train"))
-    md.predict(model, img_path, train_folder.classes)
+    if (validators.url(image_path)):
+        img = Image.open(requests.get(image_path, stream = True).raw)
+    else:
+        img = Image.open(image_path)
+
+    md.predict(model, img, load_class_names())
 
 if __name__ == '__main__':
-    data_dir = "/mnt/disks/disk-1/model-1/"
-    num_epochs = 5
-    img_to_predict_path = "../../00-data/seychelles.jpg"
+    print("=====TRAINING======")
+    num_epochs = 50
+    train(num_epochs=5, force_train=False)
 
-    data_dir = os.path.join(data_dir, "npy")
-    train(data_dir, num_epochs, force_train=True)
-    predict(data_dir, img_to_predict_path)
+    print("====PREDICTION=====")
+    image_path = "../../00-data/seychelles.jpg"
+    # image_path = "https://img.traveltriangle.com/blog/wp-content/uploads/2017/10/Cover10.jpg"
+    predict(image_path)
