@@ -4,8 +4,6 @@ import time
 import numpy as np
 import pandas as pd
 from math import exp
-import shutil
-import subprocess
 import torch
 import torch.nn as nn
 from torch.autograd import Variable as V
@@ -77,9 +75,6 @@ def prepare_train_val_folders(data_dir : str) -> None:
                     destination = os.path.join(destination_folder, file.name)
                     os.replace(file.path, destination)
 
-    # for folder in folders_to_remove:
-    #     shutil.rmtree(folder)
-
     return None
 
 def images_transformer(x):
@@ -99,12 +94,12 @@ def images_transformer(x):
 
 def prepare_input_train(data_dir : str):
     image_datasets = {x: datasets.DatasetFolder(os.path.join(data_dir, x), loader=npy_loader, extensions=['.npy'], transform=images_transformer(x)) for x in ['train', 'val']}
-    dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=10, shuffle=True, num_workers=4) for x in ['train', 'val']}
-    return dataloaders, image_datasets
+    dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=256, shuffle=True, num_workers=4) for x in ['train', 'val']}
+    return dataloaders
 
 features_blobs = []
 
-def load_model(image_datasets):
+def load_model():
     features_blobs.clear()
 
     # transfer learning : resnet18 trained on places365
@@ -132,7 +127,7 @@ def load_model(image_datasets):
     # layer to predict the class -- last layer
     num_ftrs = model.fc.in_features
 
-    class_number = len(image_datasets['train'].classes)
+    class_number = len(load_class_names())
 
     model.fc = nn.Sequential(
           nn.Linear(num_ftrs, 800),
@@ -143,11 +138,10 @@ def load_model(image_datasets):
 
     return model
 
-
-def train_model(dataloaders, image_datasets, model, num_epochs):
+def train_model(dataloaders, model, num_epochs):
     since = time.time()
 
-    dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
+    dataset_sizes = {x: len(load_class_names()) for x in ['train', 'val']}
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
     # model params
@@ -198,7 +192,9 @@ def train_model(dataloaders, image_datasets, model, num_epochs):
             print(f'{phase} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}')
 
         print()
-
+        timestamp=time.strftime("%Y%m%d-%H%H%S")
+        save_model_path=os.path.join(WORKING_DIR,f"{timestamp}_{epoch}.pth")
+        torch.save(model.state_dict(),save_model_path)
     time_elapsed = time.time() - since
     print(f'Training complete in {time_elapsed // 60:.0f}m {time_elapsed % 60:.0f}s')
 
@@ -222,8 +218,8 @@ def predict(model, img_path, class_names):
     df = pd.DataFrame({'probability': coeff, 'cellid': class_names})
     df['probability'] = df['probability'].apply(logit2prob)
     df = df.sort_values(by = 'probability', ascending = False)
-    df = df.reset_index(drop=True)
-    print('👉 dataframe of the prediction: ')
-    print(df)
+    df_3_most_probable = df[:3].reset_index(drop=True)
+    print('👉 dataframe of the 3 most probable prediction: ')
+    print(df_3_most_probable)
     print('🎉 class predicted: ', class_names[preds])
-    return df
+    return df_3_most_probable.to_dict()

@@ -51,14 +51,14 @@ def display_image_from_npy(npy_path : str, npy_file : str) -> None:
     plt.imshow(img_array)
     plt.show()
 
-def resize_image(image_array : np.ndarray, target_size : tuple) -> np.ndarray:
-    '''from image and target size, return resized image'''
-    img = Image.fromarray(image_array)
-    resized_image = img.resize(size=(target_size[0], target_size[1]))
-    return np.array(resized_image)
-
 def get_csv_number(csv_name : str) -> str :
     return csv_name.split('_')[2].strip('.csv')
+
+# def resize_image(image_array : np.ndarray, target_size : tuple) -> np.ndarray:
+#     '''from image and target size, return resized image'''
+#     img = Image.fromarray(image_array)
+#     resized_image = img.resize(size=(target_size[0], target_size[1]))
+#     return np.array(resized_image)
 
 # def predict_image_tags(image_array : np.ndarray, tags_number : int = 10) -> None:
 #     '''output the tags for image using ResNet152 model'''
@@ -109,7 +109,7 @@ def get_nb_images_per_geohash(df : pd.DataFrame) -> pd.DataFrame:
 # gs://travel-home-bucket/npy/5180949536192856064/a6_c4_3038144879.npy
 def display_image_from_image_uri(image_uri : str, local_folder : str) -> None:
     # store npy image locally
-    subprocess.call(['gsutil', '-m', 'cp', '-r', image_uri, local_folder])
+    subprocess.call(['gsutil', 'cp', image_uri, local_folder])
     img_array = load_npy_image(local_folder, image_uri.split('/')[-1])
     plt.imshow(img_array)
     plt.show()
@@ -124,6 +124,7 @@ def display_random_images_for_geohash(df : pd.DataFrame, geohash : int) -> None:
         plt.xticks(())
         plt.yticks(())
         count += 1
+
 
 ########################################################################
 ### Git hub link https://github.com/CSAILVision/places365/
