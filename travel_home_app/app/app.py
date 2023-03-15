@@ -4,11 +4,11 @@ import pandas as pd
 from PIL import Image
 import requests
 from io import BytesIO
-from return3.return3 import bubble_plot
+from travel_home_app.return3.return3 import bubble_plot
 from streamlit_folium import st_folium
 import os
 from st_clickable_images import clickable_images
-from return3.return3_bis import plot_4pics_around
+from travel_home_app.return3.return3_bis import plot_4pics_around
 
 # commande terminal =  streamlit run app/app.py
 
