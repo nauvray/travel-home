@@ -198,7 +198,7 @@ def train_model(dataloaders, image_datasets, model, data_dir, num_epochs):
 
         print()
         timestamp = time.strftime("%Y%m%d-%H%M%S")
-        save_model_path = os.path.join(data_dir, f"{timestamp}_{epoch}.pth")
+        save_model_path = os.path.join("/mnt/disks/disk-1/model-1", f"{timestamp}_{epoch}.pth")
         torch.save(model.state_dict(), save_model_path)
     time_elapsed = time.time() - since
     print(f'Training complete in {time_elapsed // 60:.0f}m {time_elapsed % 60:.0f}s')
