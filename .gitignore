@@ -23,6 +23,7 @@ notebooks/
 *.jpg
 *.msg
 *.zip
+travel-home-app/im_cell_id
 
 # inteliJ #
 .idea
