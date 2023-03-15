@@ -1,11 +1,15 @@
 .DEFAULT_GOAL := default
-#################### PACKAGE ACTIONS ###################
+#################### SETUP & PACKAGE ACTIONS ###################
+env:
+	@pyenv python 3.10.6 travel-home-env
+	@pyenv local travel-home-env
+
 reinstall_package:
 	@pip uninstall -y travel-home || :
 	@pip install -e .
 
 run_api:
-	uvicorn travel-home.api.fast:app --reload
+	uvicorn travel_home.api.fast:app --reload
 
 # reset_local_files:
 # 	rm -rf ${ML_DIR}
