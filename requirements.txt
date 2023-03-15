@@ -18,3 +18,8 @@ opencv-python
 gcsfs
 fsspec
 fastapi
+st-clickable-images
+streamlit
+requests
+folium
+streamlit_folium
