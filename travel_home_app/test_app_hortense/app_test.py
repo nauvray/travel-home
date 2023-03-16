@@ -9,7 +9,6 @@ from utils import get_map, random_images, launch_plexel
 from st_clickable_images import clickable_images
 import subprocess
 
-
 # LOGO AND BACKGROUND
 #st.set_page_config(page_icon="logo.png", page_title="Travel Home", layout="wide")
 st.set_page_config(page_title="Travel Home", layout="wide")
@@ -28,6 +27,7 @@ def add_bg_from_local():
 add_bg_from_local()
 
 # TITLE AND SUBTITLE
+
 # image = Image.open('logo2.png')
 # st.image(image, width=120)
 
