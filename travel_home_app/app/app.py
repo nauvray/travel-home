@@ -18,7 +18,6 @@ from geopy.geocoders import Nominatim
 from io import BytesIO
 import subprocess
 import random
-from travel_home.params import *
 
 
 # commande terminal =  streamlit run app/app.py
