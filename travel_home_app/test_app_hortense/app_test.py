@@ -73,6 +73,7 @@ if get_prediction==True :
     df = pd.DataFrame(data, dtype='object')
 if image_uploaded is not None:
     st.write('uploaded !!')
+    st.image(image_uploaded)
     image = image_uploaded
     st.write(image.name)
     url = 'https://travel-home-mzfiw6j4fa-ew.a.run.app/predict'
