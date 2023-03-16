@@ -63,23 +63,18 @@ image_uploaded = columns[1].file_uploader('or upload a picture', type=['jpg', 'j
 image = ''
 if get_prediction==True :
     response = requests.get(list_link[clicked])
-    st.write(list_link[clicked])
     image = list_link[clicked]
     url = 'https://travel-home-mzfiw6j4fa-ew.a.run.app/predict'
     params = {'image': image}
     request = requests.get(url, params=params)
-    #st.write(request.url)
     data = request.json()
     df = pd.DataFrame(data, dtype='object')
 if image_uploaded is not None:
-    st.write('uploaded !!')
-    st.image(image_uploaded)
     image = image_uploaded
     st.write(image.name)
     url = 'https://travel-home-mzfiw6j4fa-ew.a.run.app/predict'
     params = {'image': image.name}
     request = requests.get(url, params=params)
-    st.write(request.url)
     data = request.json()
     df = pd.DataFrame(data, dtype='object')
 
