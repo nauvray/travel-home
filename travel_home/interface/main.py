@@ -44,7 +44,7 @@ def predict(image_path : str):
 if __name__ == '__main__':
     print("=====TRAINING======")
     num_epochs = 50
-    train(num_epochs=5, force_train=False)
+    train(num_epochs=num_epochs, force_train=False)
 
     print("====PREDICTION=====")
     image_path = "../../00-data/seychelles.jpg"
