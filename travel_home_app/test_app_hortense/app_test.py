@@ -8,7 +8,7 @@ from io import BytesIO
 from utils import get_map, random_images, launch_plexel
 from st_clickable_images import clickable_images
 
-
+st.write(subprocess('pwd'))
 # LOGO AND BACKGROUND
 st.set_page_config(page_icon="travel-home/master/travel_home_app/test_app_hortense/logo.png", page_title="Travel Home", layout="wide")
 def add_bg_from_local():
