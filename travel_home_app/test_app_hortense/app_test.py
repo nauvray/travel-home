@@ -74,6 +74,8 @@ if get_prediction==True:
 if get_prediction == True:
     url = 'https://travel-home-mzfiw6j4fa-ew.a.run.app/predict'
     params = {'image': f'../../travel_home_app/test_app_hortense/{image}'}
+    st.write(params)
+    st.write(type(image))
     request = requests.get(url, params=params)
     data = request.json()
     df = pd.DataFrame(data, dtype='object')
