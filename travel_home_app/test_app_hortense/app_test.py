@@ -70,6 +70,7 @@ if get_prediction==True :
     request = requests.get(url, params=params)
     #st.write(request.url)
     data = request.json()
+    df = pd.DataFrame(data, dtype='object')
 if image_uploaded is not None:
     image = image_uploaded
     url = 'https://travel-home-mzfiw6j4fa-ew.a.run.app/predict'
@@ -77,10 +78,7 @@ if image_uploaded is not None:
     request = requests.get(url, params=params)
     st.write(request.url)
     data = request.json()
-        
-
-# API
-df = pd.DataFrame(data, dtype='object')
+    df = pd.DataFrame(data, dtype='object')
 
 
 # output api test en attendant l'api
