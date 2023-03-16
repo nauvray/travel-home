@@ -74,7 +74,7 @@ if get_prediction==True :
         
 
 # API
-if get_prediction == True or image not None:
+if get_prediction == True or image is not None:
     url = 'https://travel-home-mzfiw6j4fa-ew.a.run.app/predict'
     params = {'image': image}
     #st.write(params)
