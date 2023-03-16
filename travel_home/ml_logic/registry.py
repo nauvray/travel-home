@@ -9,7 +9,12 @@ def load_travel_home_model():
     Return a saved model from GCS (most recent one)
     Return None (but do not Raise) if no model found
     """
-    client = storage.Client()
+    if os.environ.get("ENV") == "DEV":
+        client = storage.Client.from_service_account_json("~/gcpkey.json")
+        print("get model with gcp key")
+    else:
+        client = storage.Client()
+
     blobs = list(client.get_bucket(BUCKET_NAME).list_blobs(prefix="models/"))
     try:
         latest_blob = max(blobs, key=lambda x: x.updated)

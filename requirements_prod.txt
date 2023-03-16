@@ -13,3 +13,4 @@ folium
 st_clickable_images
 streamlit_folium
 streamlit
+uvicorn

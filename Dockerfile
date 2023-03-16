@@ -1,11 +1,12 @@
 FROM python:3.10.6-bullseye
 
 # Dependencies installation
-COPY requirements_prod.txt requirements.txt
+COPY requirements.txt requirements.txt
 RUN pip install --upgrade pip
-RUN pip install -r requirements
+RUN pip install -r requirements.txt
 
 # Install travel-home
+COPY gcpkey.json gcpkey.json
 COPY travel_home travel_home
 COPY setup.py setup.py
 RUN pip install .

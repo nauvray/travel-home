@@ -1,4 +1,3 @@
-from PIL import Image
 import os
 import time
 import numpy as np
@@ -63,13 +62,13 @@ def prepare_train_val_folders(data_dir : str) -> None:
         else:
             for index, file in enumerate(files):
                 if index + 1 >= nb_files * 0.7:
-                    destination_folder = os.path.join(train_images_path, file.path.split("/")[-2])
+                    destination_folder = os.path.join(val_images_path, file.path.split("/")[-2])
                     if not os.path.isdir(destination_folder):
                         os.mkdir(destination_folder)
                     destination = os.path.join(destination_folder, file.name)
                     os.replace(file.path, destination)
                 if index + 1 < nb_files * 0.7:
-                    destination_folder = os.path.join(val_images_path, file.path.split("/")[-2])
+                    destination_folder = os.path.join(train_images_path, file.path.split("/")[-2])
                     if not os.path.isdir(destination_folder):
                         os.mkdir(destination_folder)
                     destination = os.path.join(destination_folder, file.name)
@@ -94,7 +93,7 @@ def images_transformer(x):
 
 def prepare_input_train(data_dir : str):
     image_datasets = {x: datasets.DatasetFolder(os.path.join(data_dir, x), loader=npy_loader, extensions=['.npy'], transform=images_transformer(x)) for x in ['train', 'val']}
-    dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=256, shuffle=True, num_workers=4) for x in ['train', 'val']}
+    dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=4, shuffle=True, num_workers=4) for x in ['train', 'val']}
     return dataloaders
 
 features_blobs = []
@@ -206,11 +205,10 @@ def logit2prob(logit):
   prob = odds / (1 + odds)
   return(prob)
 
-def predict(model, img_path, class_names):
+def predict(model, img, class_names):
     # preprocess the image
     tf = utils.returnTF()
-    input_img = Image.open(img_path)
-    input_img = V(tf(input_img).unsqueeze(0))
+    input_img = V(tf(img).unsqueeze(0))
     # predict the class of the image
     outputs = model(input_img)
     _, preds = torch.max(outputs, 1)
