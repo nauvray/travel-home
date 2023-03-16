@@ -62,13 +62,13 @@ def prepare_train_val_folders(data_dir : str) -> None:
         else:
             for index, file in enumerate(files):
                 if index + 1 >= nb_files * 0.7:
-                    destination_folder = os.path.join(train_images_path, file.path.split("/")[-2])
+                    destination_folder = os.path.join(val_images_path, file.path.split("/")[-2])
                     if not os.path.isdir(destination_folder):
                         os.mkdir(destination_folder)
                     destination = os.path.join(destination_folder, file.name)
                     os.replace(file.path, destination)
                 if index + 1 < nb_files * 0.7:
-                    destination_folder = os.path.join(val_images_path, file.path.split("/")[-2])
+                    destination_folder = os.path.join(train_images_path, file.path.split("/")[-2])
                     if not os.path.isdir(destination_folder):
                         os.mkdir(destination_folder)
                     destination = os.path.join(destination_folder, file.name)
