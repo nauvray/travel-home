@@ -85,7 +85,7 @@ def bubble_plot(df_result):
 
 def plot_4pics_around(cellid):
     my_local_path = '/Users/marie/code/Marie-Pierre74/travel-home/00-data/img_test'
-    cellid_path =  f'gs://{BUCKET_NAME}/npy/{cellid}'
+    cellid_path =  f'gs://travel-home-bucket/npy/{cellid}'
     subprocess.call(['gsutil', '-m', 'cp', '-r', cellid_path, my_local_path])
 
     image_path = os.path.join(my_local_path,cellid)
@@ -151,6 +151,10 @@ def launch_plexel(word:str):
 ############################ END Fonctions de Nico
 ##################################################
 
+
+#################################################
+########## DEBUT STREAMLIT
+#################################################
 
 st.set_page_config(layout="wide")
 
