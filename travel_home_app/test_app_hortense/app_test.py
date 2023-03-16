@@ -61,7 +61,7 @@ if selected: # input = bar de recherche
 image_uploaded = columns[1].file_uploader('or upload a picture', type=['jpg', 'jpeg', 'png']) # input = image upload
 
 image = ''
-if get_prediction==True:
+if get_prediction==True :
     if image_uploaded is None :
         response = requests.get(list_link[clicked])
         st.write(list_link[clicked])
@@ -71,9 +71,10 @@ if get_prediction==True:
         #image = 'image.jpg'
     else :
         image = image_uploaded
+        
 
 # API
-if get_prediction == True:
+if get_prediction == True or image not None:
     url = 'https://travel-home-mzfiw6j4fa-ew.a.run.app/predict'
     params = {'image': image}
     #st.write(params)
