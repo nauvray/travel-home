@@ -360,3 +360,7 @@ if image_uploaded:
 
         fig_3 = plot_4pics_around(str(df_predict['cellid'][2]))
         st.pyplot(fig_3)
+
+###############
+######END
+##############
