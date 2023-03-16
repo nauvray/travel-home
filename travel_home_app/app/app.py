@@ -35,7 +35,7 @@ def bubble_plot(df_result):
     df_result[['lat','lon']] = df_result.apply(lambda x: s2cell.cell_id_to_lat_lon(x.cellid), axis=1, result_type='expand')
 
     # create a new column = weight in %
-    df_result['new_weight'] = df_result['weight'].apply(lambda x: round(x*100))
+    df_result['new_weight'] = df_result['probability'].apply(lambda x: round(x*100))
 
 
 ########################################################################
@@ -268,16 +268,16 @@ if image_uploaded:
 ###########################
 
 
-    # params = dict(img = image_uploaded)
-    #travel_home_api_url = 'https://XXXXXXXXXX/predict'
+    #params = dict(img = image_uploaded)
+    #url = 'https://XXXXXXXXXX/predict'
 
     ### Make request to  API
-    #result = requests.get(travel_home_api_url, params=params)
+    #result = requests.get(url, params=params)
 
 
     #if result.status_code == 200:
         #### Display taggs returned by the API
-        # prediction = result.json()['image']
+        # prediction = result.json()['img']
 
 
     #else:
@@ -286,12 +286,12 @@ if image_uploaded:
 
 ## --> Transformation du dictionnaire (pred du modele)
 
-## si dictionnaire des predicts de Hortense se nomme prediction (avec une clé 'probability' et une clé 'sell_id')
+## si dictionnaire des predicts de Hortense se nomme prediction (avec une clé 'probability' et une clé 'cellid')
 
 # !!!!!!!!!!!!!!!  Décommenter la 2ème ligne ci-dessous pour activer le DataFrame df_predict
 
 # construction du DataFrame relatif pour appliquer la fonction bubble_plot
-# df_predict = pd.DataFrame(prediction,dtype='object').rename(columns={'probability':'weight', 'sell_id' :'cellid'})
+# df_predict = pd.DataFrame(prediction,dtype='object')
 
 
 ## --> Affichage de la carte de france
@@ -304,7 +304,7 @@ if image_uploaded:
     with col2:
         prediction = {
                 'cellid': [1343598811095760896, 5169868489430663168, 5218837438796922880],
-                'weight': [0.83, 0.56, 0.34]
+                'probability': [0.83, 0.56, 0.34]
                 }
 
         df_predict = pd.DataFrame(prediction,dtype='object')
@@ -327,7 +327,7 @@ if image_uploaded:
 
     # Ajouter du contenu à la première colonne  !!!!!!!! changer le DataFrame en prenant df_predict à la place de df_test
     with col1:
-        weight_1 = df_predict['weight'][0]
+        weight_1 = df_predict['probability'][0]
         texte_1 = f"Landscapes with {round(weight_1*100)}% similarities"
         centrer_texte_1 = f"<center><h3>{texte_1}</h3></center>"
 
@@ -339,7 +339,7 @@ if image_uploaded:
 
     # Ajouter du contenu à la deuxième colonne  !!!!!!!! changer le DataFrame en prenant df_predict à la place de df_test
     with col2:
-        weight_2 = df_predict['weight'][1]
+        weight_2 = df_predict['probability'][1]
         texte_2 = f'Landscapes with {round(weight_2*100)}% similarities'
         centrer_texte_2 = f"<center><h3>{texte_2}</h3></center>"
 
@@ -351,7 +351,7 @@ if image_uploaded:
 
     # Ajouter du contenu à la 3ème colonne  !!!!!!!! changer le DataFrame en prenant df_predict à la place de df_test
     with col3:
-        weight_3 = df_predict['weight'][2]
+        weight_3 = df_predict['probability'][2]
         texte_3 = f'Landscapes with {round(weight_3*100)}% similarities'
         centrer_texte_3 = f"<center><h3>{texte_3}</h3></center>"
 
@@ -360,3 +360,7 @@ if image_uploaded:
 
         fig_3 = plot_4pics_around(str(df_predict['cellid'][2]))
         st.pyplot(fig_3)
+
+###############
+######END
+##############
