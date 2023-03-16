@@ -4,7 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 from io import BytesIO
-import subprocess
 from travel_home.params import *
 # from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input, decode_predictions
 # from tensorflow.keras.applications.resnet import ResNet152
@@ -18,9 +17,9 @@ from torchvision import transforms as trn
 from PIL import Image
 from torch.nn import functional as F
 
-def load_npy_image(npy_path : str, npy_file : str) -> np.ndarray:
+def load_npy_image(npy_path : str, npy_name : str) -> np.ndarray:
     '''load image (numpy.array) from npy file'''
-    npy_file_path = os.path.join(npy_path, npy_file)
+    npy_file_path = os.path.join(npy_path, npy_name)
     img_array = np.load(npy_file_path)
     print(f"npy image loaded with shape: ({img_array.shape[0]}, {img_array.shape[1]}, 3)")
     return img_array
@@ -33,98 +32,42 @@ def get_df_from_csv(csv_path : str, csv_name : str) -> pd.DataFrame:
     return df
 
 def add_storage_path(df : pd.DataFrame) -> pd.DataFrame:
+    '''Add storage path column to the dataframe representing the URI of each image'''
     df_edit = df.copy()
     df_edit['storage_filename'] = df_edit.apply(lambda x: f"gs://travel-home-bucket/npy/{str(x.cellid)}/{x.img.strip('.jpg')}.npy", axis=1)
     return df_edit
 
 def display_image_from_hexa(hexa : str) -> None:
     '''display image in hexadecimal format'''
-    image = Image.open(BytesIO(bytes.fromhex(hexa)))
+    image = get_image_from_hexa(hexa)
     width, height = image.size
     print(f"Shape of the image: {height} x {width}")
     plt.imshow(image)
     plt.show()
 
-def display_image_from_npy(npy_path : str, npy_file : str) -> None:
-    '''display npy image'''
-    img_array = load_npy_image(npy_path, npy_file)
+def display_image_from_npy(npy_path : str, npy_name : str) -> None:
+    '''display npy image from npy path and npy name'''
+    img_array = load_npy_image(npy_path, npy_name)
     plt.imshow(img_array)
     plt.show()
 
 def get_csv_number(csv_name : str) -> str :
     return csv_name.split('_')[2].strip('.csv')
 
-# def resize_image(image_array : np.ndarray, target_size : tuple) -> np.ndarray:
-#     '''from image and target size, return resized image'''
-#     img = Image.fromarray(image_array)
-#     resized_image = img.resize(size=(target_size[0], target_size[1]))
-#     return np.array(resized_image)
-
-# def predict_image_tags(image_array : np.ndarray, tags_number : int = 10) -> None:
-#     '''output the tags for image using ResNet152 model'''
-#     resized_img_array = resize_image(image_array, (224, 224))
-#     model = ResNet152(weights='imagenet')
-#     X = np.expand_dims(resized_img_array, axis=0)
-#     # print("X shape", X.shape)
-#     X_preproc = preprocess_input(X)
-#     # print("X_preproc shape", X_preproc.shape)
-#     preds = model.predict(X_preproc)
-#     # decode the results into a list of tuples (class, description, probability)
-#     print('Predicted:', decode_predictions(preds, top=tags_number)[0])
-
 def get_image_from_hexa(hexa : str) -> Image:
     return Image.open(BytesIO(bytes.fromhex(hexa)))
 
 def get_image_from_url(img_url) -> Image:
-    # load the test image
+    '''return PIL image from image url'''
     os.system('wget %s -q -O test.jpg' % img_url)
     img = Image.open('test.jpg')
     return img
 
-def get_image_from_npy(npy_path : str, npy_file : str) -> Image:
-    image_array = load_npy_image(npy_path, npy_file)
+def get_image_from_npy(npy_path : str, npy_name : str) -> Image:
+    '''return PIL image from npy image '''
+    image_array = load_npy_image(npy_path, npy_name)
     img = Image.fromarray(image_array)
     return img
-
-def get_df_from_preproc_csv(local_folder : str, preproc_csv_folder : str) -> pd.DataFrame:
-    preproc_csv_folder = f"gs://{BUCKET_NAME}/preproc_csv"
-    # store csv locally
-    subprocess.call(['gsutil', '-m', 'cp', '-r', preproc_csv_folder, local_folder])
-    # get all preproc df and concatenate them
-    appended_df = []
-    for root, dirs, files in os.walk(preproc_csv_folder):
-        for file in files:
-            if (file.startswith("pre_proc_data")):
-                df = pd.read_csv(file)
-                # store df in list
-                appended_df.append(df)
-    # create a single df
-    df_all = pd.concat(appended_df)
-    return df_all
-
-def get_nb_images_per_geohash(df : pd.DataFrame) -> pd.DataFrame:
-    df_count_per_geohash = df[['cellid']].groupby('cellid').count()
-    return df_count_per_geohash
-
-# gs://travel-home-bucket/npy/5180949536192856064/a6_c4_3038144879.npy
-def display_image_from_image_uri(image_uri : str, local_folder : str) -> None:
-    # store npy image locally
-    subprocess.call(['gsutil', 'cp', image_uri, local_folder])
-    img_array = load_npy_image(local_folder, image_uri.split('/')[-1])
-    plt.imshow(img_array)
-    plt.show()
-
-def display_random_images_for_geohash(df : pd.DataFrame, geohash : int) -> None:
-    df_geoshash = df[df.cellid == geohash]
-    nb_images = 4
-    # display nb_images for the geohash
-    for i in range(nb_images - 1):
-        plt.subplot(nb_images, 1, count)
-        display_image_from_image_uri(df_geoshash.storage_filename[i])
-        plt.xticks(())
-        plt.yticks(())
-        count += 1
-
 
 ########################################################################
 ### Git hub link https://github.com/CSAILVision/places365/

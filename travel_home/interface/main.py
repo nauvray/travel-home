@@ -1,10 +1,9 @@
-from travel_home.ml_logic import registry
+from travel_home.ml_logic import registry, utils
 from travel_home.ml_logic import model as md
 import os
 from travel_home.params import *
 import validators
 from PIL import Image
-import requests
 
 
 def train(num_epochs : int, force_train : bool):
@@ -30,14 +29,14 @@ def train(num_epochs : int, force_train : bool):
     else:
         print("No training required")
 
-def predict(image_path : str):
+def predict(image : str):
     model = registry.load_travel_home_model()
     assert model is not None
 
-    if (validators.url(image_path)):
-        img = Image.open(requests.get(image_path, stream = True).raw)
+    if (validators.url(image)):
+        img = utils.get_image_from_url(image)
     else:
-        img = Image.open(image_path)
+        img = Image.open(image)
 
     md.predict(model, img, load_class_names())
 
@@ -47,6 +46,6 @@ if __name__ == '__main__':
     train(num_epochs=num_epochs, force_train=False)
 
     print("====PREDICTION=====")
-    image_path = "../../00-data/seychelles.jpg"
-    # image_path = "https://img.traveltriangle.com/blog/wp-content/uploads/2017/10/Cover10.jpg"
-    predict(image_path)
+    image = "../../00-data/seychelles.jpg"
+    # image = "https://img.traveltriangle.com/blog/wp-content/uploads/2017/10/Cover10.jpg"
+    predict(image)
