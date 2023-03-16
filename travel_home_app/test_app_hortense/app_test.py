@@ -74,15 +74,15 @@ if get_prediction==True :
         
 
 # API
-if get_prediction == True or image is not None:
-    url = 'https://travel-home-mzfiw6j4fa-ew.a.run.app/predict'
-    params = {'image': image}
-    #st.write(params)
-    #request = requests.get(f'{url}?image=../../travel_home_app/test_app_hortense/{image}')
-    request = requests.get(url, params=params)
-    st.write(request.url)
-    data = request.json()
-    df = pd.DataFrame(data, dtype='object')
+
+url = 'https://travel-home-mzfiw6j4fa-ew.a.run.app/predict'
+params = {'image': image}
+#st.write(params)
+#request = requests.get(f'{url}?image=../../travel_home_app/test_app_hortense/{image}')
+request = requests.get(url, params=params)
+st.write(request.url)
+data = request.json()
+df = pd.DataFrame(data, dtype='object')
 
 
 # output api test en attendant l'api
