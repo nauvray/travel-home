@@ -64,6 +64,7 @@ image = ''
 if get_prediction==True:
     if image_uploaded is None :
         response = requests.get(list_link[clicked])
+        st.write(BytesIO(response.content))
         image = Image.open(BytesIO(response.content))
         image.save('image.jpg')
         image = 'image.jpg'
