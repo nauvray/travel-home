@@ -9,9 +9,6 @@ from utils import get_map, random_images, launch_plexel
 from st_clickable_images import clickable_images
 import subprocess
 
-result = subprocess.run('pwd', shell=True, check=True, stdout=subprocess.PIPE)
-st.write(result)
-
 # LOGO AND BACKGROUND
 st.set_page_config(page_icon="master/travel_home_app/test_app_hortense/logo.png", page_title="Travel Home", layout="wide")
 def add_bg_from_local():
