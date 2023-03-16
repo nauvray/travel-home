@@ -9,7 +9,7 @@ from utils import get_map, random_images, launch_plexel
 from st_clickable_images import clickable_images
 import subprocess
 
-result = subprocess.run('echo foo', shell=True, check=True, stdout=subprocess.PIPE)
+result = subprocess.run('pwd', shell=True, check=True, stdout=subprocess.PIPE)
 st.write(result)
 
 # LOGO AND BACKGROUND
