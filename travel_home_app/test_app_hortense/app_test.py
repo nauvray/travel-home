@@ -74,7 +74,7 @@ if get_prediction==True :
 if image_uploaded is not None:
     st.write('uploaded !!')
     image = image_uploaded
-    st.write(image)
+    st.write(image.name)
     url = 'https://travel-home-mzfiw6j4fa-ew.a.run.app/predict'
     params = {'image': image}
     request = requests.get(url, params=params)
