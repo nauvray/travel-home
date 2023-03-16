@@ -13,7 +13,7 @@ result = subprocess.run('pwd', shell=True, check=True, stdout=subprocess.PIPE)
 st.write(result)
 
 # LOGO AND BACKGROUND
-st.set_page_config(page_icon="travel-home/master/travel_home_app/test_app_hortense/logo.png", page_title="Travel Home", layout="wide")
+st.set_page_config(page_icon="master/travel_home_app/test_app_hortense/logo.png", page_title="Travel Home", layout="wide")
 def add_bg_from_local():
     st.markdown(
     f"""
@@ -28,7 +28,7 @@ def add_bg_from_local():
 add_bg_from_local()
 
 # TITLE AND SUBTITLE
-image = Image.open('travel-home/master/travel_home_app/test_app_hortense/logo2.png')
+image = Image.open('master/travel_home_app/test_app_hortense/logo2.png')
 st.image(image, width=120)
 
 title = '<p style="font-family:Cooper Black; color:Black; font-size: 50px">Travel Home</p>'
