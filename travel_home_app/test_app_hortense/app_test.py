@@ -62,26 +62,24 @@ image_uploaded = columns[1].file_uploader('or upload a picture', type=['jpg', 'j
 
 image = ''
 if get_prediction==True :
-    if image_uploaded is None :
-        response = requests.get(list_link[clicked])
-        st.write(list_link[clicked])
-        image = list_link[clicked]
-        #image = Image.open(BytesIO(response.content))
-        #image.save('image.jpg')
-        #image = 'image.jpg'
-    else :
-        image = image_uploaded
+    response = requests.get(list_link[clicked])
+    st.write(list_link[clicked])
+    image = list_link[clicked]
+    url = 'https://travel-home-mzfiw6j4fa-ew.a.run.app/predict'
+    params = {'image': image}
+    request = requests.get(url, params=params)
+    #st.write(request.url)
+    data = request.json()
+if image_uploaded is not None:
+    image = image_uploaded
+    url = 'https://travel-home-mzfiw6j4fa-ew.a.run.app/predict'
+    params = {'image': image}
+    request = requests.get(url, params=params)
+    st.write(request.url)
+    data = request.json()
         
 
 # API
-
-url = 'https://travel-home-mzfiw6j4fa-ew.a.run.app/predict'
-params = {'image': image}
-#st.write(params)
-#request = requests.get(f'{url}?image=../../travel_home_app/test_app_hortense/{image}')
-request = requests.get(url, params=params)
-st.write(request.url)
-data = request.json()
 df = pd.DataFrame(data, dtype='object')
 
 
