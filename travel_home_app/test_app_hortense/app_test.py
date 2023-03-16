@@ -65,7 +65,7 @@ if get_prediction==True:
     if image_uploaded is None :
         response = requests.get(list_link[clicked])
         image = Image.open(BytesIO(response.content))
-        image.save('image.jpg')
+        image.save('../../travel_home/api/image.jpg')
         image = 'image.jpg'
     else :
         image = image_uploaded
@@ -73,7 +73,7 @@ if get_prediction==True:
 # API
 if get_prediction == True:
     url = 'https://travel-home-mzfiw6j4fa-ew.a.run.app/predict'
-    params = {'image': f'../../travel_home_app/test_app_hortense/{image}'}
+    params = {'image': image}
     st.write(params)
     st.write(type(image))
     request = requests.get(url, params=params)
