@@ -25,3 +25,4 @@ folium
 streamlit_folium
 uvicorn
 geopy
+nominatim
