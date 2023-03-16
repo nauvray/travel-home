@@ -165,7 +165,7 @@ st.set_page_config(layout="wide")
 # Insertion Bandeau du haut
 ######################
 
-bandeau = Image.open('app/images/TravelHome3.png')
+bandeau = Image.open('app/TravelHome3.png')
 st.image(bandeau, caption='', use_column_width=True)
 
 ######################
@@ -184,7 +184,7 @@ st.write('')
 # insertion logo
 #########################
 
-logo = "app/images/LogoGoogleSust1.png"
+logo = "app/LogoGoogleSust1.png"
 
 # Créer un conteneur
 with st.container():
