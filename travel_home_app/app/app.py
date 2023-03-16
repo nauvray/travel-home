@@ -4,13 +4,130 @@ import pandas as pd
 from PIL import Image
 import requests
 from io import BytesIO
-from travel_home_app.return3.return3 import bubble_plot
 from streamlit_folium import st_folium
 import os
 from st_clickable_images import clickable_images
-from travel_home_app.return3.return3_bis import plot_4pics_around
+import s2cell
+import s2sphere
+from s2sphere import CellId, LatLng, Cell
+import matplotlib.pyplot as plt
+import seaborn as sns
+import folium
+import geopy
+from geopy.geocoders import Nominatim
+from io import BytesIO
+import subprocess
+import random
+from travel_home.params import *
+
 
 # commande terminal =  streamlit run app/app.py
+
+########################################################################
+##### fonction qui à partir d'un DataFrame (avec une col cellid et une col weight) retourne le centre
+########################################################################
+
+def bubble_plot(df_result):
+########################################################################
+### PART 1
+########################################################################
+    # create new dataframe with center and % of weight
+    df_result[['lat','lon']] = df_result.apply(lambda x: s2cell.cell_id_to_lat_lon(x.cellid), axis=1, result_type='expand')
+
+    # create a new column = weight in %
+    df_result['new_weight'] = df_result['weight'].apply(lambda x: round(x*100))
+
+
+########################################################################
+### PART 2
+########################################################################
+    threshold = 10
+
+    # create a new dataframe with only % > threshold
+
+    df_select = df_result[df_result.new_weight > threshold]
+
+
+########################################################################
+### PART 3
+########################################################################
+    # plot the bubble around the center + weight
+    #### Avec FOLIUM
+
+
+    geolocator = Nominatim(user_agent="my-app")
+
+    location = geolocator.geocode("France")
+
+    map_fr = folium.Map(location=[location.latitude, location.longitude], zoom_start=6)
+
+
+
+    for lat, lon, weight in zip(df_select['lat'], df_select['lon'], df_select['new_weight']):
+        folium.CircleMarker(location=[lat, lon],
+                  radius=weight/2,
+                  color='blue',
+                  fill=True,
+                  fill_color='blue').add_to(map_fr)
+
+
+    return map_fr
+
+########################################################################
+##### END Fonction Bubbleplot
+########################################################################
+
+
+########################################################################
+### NOUVELLE FONCTION pour plotter les 4 images par cellid predict
+########################################################################
+
+
+def plot_4pics_around(cellid):
+    my_local_path = '/Users/marie/code/Marie-Pierre74/travel-home/00-data/img_test'
+    cellid_path =  f'gs://{BUCKET_NAME}/npy/{cellid}'
+    subprocess.call(['gsutil', '-m', 'cp', '-r', cellid_path, my_local_path])
+
+    image_path = os.path.join(my_local_path,cellid)
+
+    nb_images = 4
+    count = 1
+
+    for i in range(nb_images):
+
+        file_name = random.choice(os.listdir(image_path))
+        img_array = load_npy_image(image_path,file_name)
+        plt.subplot(nb_images,1,count)
+        plt.imshow(img_array)
+
+        #Remove plot ticks
+        plt.xticks(())
+        plt.yticks(())
+        count +=1
+    return plt.gcf()
+
+
+#######################################################################
+### END NOUVELLE FONCTION pour plotter les 4 images par cellid predict
+########################################################################
+
+
+##################################################
+############################ Fonction Maddalen de utils
+##################################################
+
+
+def load_npy_image(npy_path : str, npy_file : str) -> np.ndarray:
+    '''load image (numpy.array) from npy file'''
+    npy_file_path = os.path.join(npy_path, npy_file)
+    img_array = np.load(npy_file_path)
+    print(f"npy image loaded with shape: ({img_array.shape[0]}, {img_array.shape[1]}, 3)")
+    return img_array
+
+##################################################
+############################ END Fonction Maddalen de utils
+##################################################
+
 
 ##################################################
 ############################ Fonctions de Nico
