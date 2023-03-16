@@ -10,7 +10,7 @@ from st_clickable_images import clickable_images
 import subprocess
 
 # LOGO AND BACKGROUND
-st.set_page_config(page_icon="https://raw.githubusercontent.com/nauvray/travel-home/master/travel_home_app/test_app_hortense/logo.png", page_title="Travel Home", layout="wide")
+#st.set_page_config(page_icon="https://raw.githubusercontent.com/nauvray/travel-home/master/travel_home_app/test_app_hortense/logo.png", page_title="Travel Home", layout="wide")
 def add_bg_from_local():
     st.markdown(
     f"""
@@ -25,8 +25,8 @@ def add_bg_from_local():
 add_bg_from_local()
 
 # TITLE AND SUBTITLE
-image = Image.open('https://raw.githubusercontent.com/nauvray/travel-home/master/travel_home_app/test_app_hortense/logo2.png')
-st.image(image, width=120)
+#image = Image.open('https://raw.githubusercontent.com/nauvray/travel-home/master/travel_home_app/test_app_hortense/logo2.png')
+#st.image(image, width=120)
 
 title = '<p style="font-family:Cooper Black; color:Black; font-size: 50px">Travel Home</p>'
 st.markdown(title, unsafe_allow_html=True)
