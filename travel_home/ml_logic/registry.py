@@ -10,7 +10,8 @@ def load_travel_home_model():
     Return None (but do not Raise) if no model found
     """
     if os.environ.get("ENV") == "DEV":
-        client = storage.Client.from_service_account_json("gcpkey.json")
+        client = storage.Client.from_service_account_json("~/gcpkey.json")
+        print("get model with gcp key")
     else:
         client = storage.Client()
 
