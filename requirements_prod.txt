@@ -16,3 +16,4 @@ streamlit
 uvicorn
 geopy
 nominatim
+subprocess
