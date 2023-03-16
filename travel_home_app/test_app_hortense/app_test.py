@@ -72,7 +72,7 @@ if get_prediction==True:
 
 # API
 if get_prediction == True:
-    url = 'http://127.0.0.1:8000/predict'
+    url = 'https://travel-home-mzfiw6j4fa-ew.a.run.app/predict'
     params = {'image': f'../../travel_home_app/test_app_hortense/{image}'}
     request = requests.get(url, params=params)
     data = request.json()
