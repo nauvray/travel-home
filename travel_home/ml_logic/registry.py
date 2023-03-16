@@ -9,8 +9,8 @@ def load_travel_home_model():
     Return a saved model from GCS (most recent one)
     Return None (but do not Raise) if no model found
     """
-    if os.environ.get("ENV") == "DEV":
-        client = storage.Client.from_service_account_json("~/gcpkey.json")
+    if ENV == "DEV":
+        client = storage.Client.from_service_account_json(GCP_KEY_PATH)
         print("get model with gcp key")
     else:
         client = storage.Client()
