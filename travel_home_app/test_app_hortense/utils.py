@@ -23,7 +23,7 @@ def launch_plexel(word:str):
 # FUNCTION TO GET THE MAP
 def get_map(df_test):
     # create new dataframe with center and % of weight
-    df_test[['lat','lon']] = df_test.apply(lambda x: s2cell.cell_id_to_lat_lon(x.cellid), axis=1, result_type='expand')
+    df_test[['lat','lon']] = df_test.apply(lambda x: s2cell.cell_id_to_lat_lon(int(x.cellid)), axis=1, result_type='expand')
     # create a new column = weight in %
     df_test['new_proba'] = df_test['probability'].apply(lambda x: round(x*100))
 
