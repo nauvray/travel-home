@@ -77,6 +77,7 @@ if get_prediction == True:
     st.write(params)
     st.write(type(image))
     request = requests.get(url, params=params)
+    st.write(request.url)
     data = request.json()
     df = pd.DataFrame(data, dtype='object')
 
