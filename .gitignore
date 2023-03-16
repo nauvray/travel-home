@@ -23,6 +23,7 @@ notebooks/
 *.jpg
 *.msg
 *.zip
+gcpkey.json
 
 
 # inteliJ #
