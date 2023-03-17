@@ -27,16 +27,16 @@ def predict(image):
     y_pred = md.predict(model, img, load_class_names())
     return y_pred
 
-@app.post("/predict")
+@app.post("/predictcustom")
 async def predict(image:UploadFile=File(...)):
     # get stored model
     model = app.state.model
     assert model is not None
 
-    img = image.read()
+    img = await image.read()
     img = np.frombuffer(img,dtype=np.uint8)
     img_arr = cv2.imdecode(img,cv2.IMREAD_UNCHANGED)
-    img = Image.fromarray(img_arr)
+    img = Image.fromarray(img_arr,mode='RGB')
 
     y_pred = md.predict(model, img, load_class_names())
     return y_pred
