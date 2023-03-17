@@ -5,8 +5,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from io import BytesIO
 from travel_home.params import *
-# from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input, decode_predictions
-# from tensorflow.keras.applications.resnet import ResNet152
+import subprocess
 
 # PlacesCNN to predict the scene category, attribute, and class activation map in a single pass
 # by Bolei Zhou, sep 2, 2017
@@ -68,6 +67,18 @@ def get_image_from_npy(npy_path : str, npy_name : str) -> Image:
     image_array = load_npy_image(npy_path, npy_name)
     img = Image.fromarray(image_array)
     return img
+
+def get_nb_images_for_geohash(geohash : int):
+    source = f"gs://{BUCKET_NAME}/npy/{geohash}"
+    destination = f"{WORKING_DIR}/{geohash}"
+    subprocess.call(['gsutil', '-m', 'cp', '-r', source, WORKING_DIR])
+
+    nb_files = 0
+    for path in os.scandir(destination):
+        if path.is_file():
+            nb_files += 1
+
+    return nb_files
 
 ########################################################################
 ### Git hub link https://github.com/CSAILVision/places365/
