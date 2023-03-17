@@ -18,6 +18,7 @@ from geopy.geocoders import Nominatim
 from io import BytesIO
 import subprocess
 import random
+import cv2
 
 
 ##### Fin IMPORTS######
@@ -203,7 +204,7 @@ with st.container():
 st.subheader('_**Write your dream destination and press Enter**_')
 selected = st.text_input("")
 
-image_uploaded = None
+uploaded_file = None
 
 if selected:
     list_link=launch_plexel(selected)
@@ -221,7 +222,8 @@ if selected:
     if clicked > -1:
         url = list_link[clicked]
         response = requests.get(url)
-        image_uploaded = Image.open(BytesIO(response.content))
+        uploaded_file = BytesIO(response.content)
+        image_uploaded = Image.open(uploaded_file)
         col1, col2, col3 = st.columns([3,3,3])
         with col1:
             st.write('')
@@ -258,8 +260,9 @@ else:
 
 
 
-if image_uploaded:
+if uploaded_file:
 ## --> Texte d'accroche
+    uploaded_file = uploaded_file.getvalue()
     texte = "Discover now your next holidays spots in France"
     center_texte = f"<center><h2>{texte}</h2></center>"
 
@@ -275,31 +278,22 @@ if image_uploaded:
 ###########################
 
 
-    #params = dict(img = image_uploaded)
-    #url = 'https://XXXXXXXXXX/predict'
+
+    url = 'http://127.0.0.1:8000/predict'
+    # url = 'https://travel-home-mzfiw6j4fa-ew.a.run.app/predict'
+    params = dict(image = uploaded_file)
 
     ### Make request to  API
-    #result = requests.get(url, params=params)
+    result = requests.get(url, params=params)
+    prediction = result.json()
 
-
-    #if result.status_code == 200:
-        #### Display taggs returned by the API
-        # prediction = result.json()['img']
-
-
-    #else:
-        # st.markdown("**Oops**, something went wrong 😓 Please try again.")
-
+    df_predict = pd.DataFrame(prediction, dtype="object")
 
 ## --> Transformation du dictionnaire (pred du modele)
 
 ## si dictionnaire des predicts de Hortense se nomme prediction (avec une clé 'probability' et une clé 'cellid')
 
-# !!!!!!!!!!!!!!!  Décommenter la 2ème ligne ci-dessous pour activer le DataFrame df_predict
-
 # construction du DataFrame relatif pour appliquer la fonction bubble_plot
-# df_predict = pd.DataFrame(prediction,dtype='object')
-
 
 ## --> Affichage de la carte de france
 
@@ -309,13 +303,7 @@ if image_uploaded:
         st.write("")
 
     with col2:
-        prediction = {
-                'cellid': [1343598811095760896, 5169868489430663168, 5218837438796922880],
-                'probability': [0.83, 0.56, 0.34]
-                }
 
-        df_predict = pd.DataFrame(prediction,dtype='object')
-        # ici prendre le df_predict recréé au-dessus après l'avoir activé (décommenté)
         st_folium(bubble_plot(df_predict),width = 825)
 
     with col3:
