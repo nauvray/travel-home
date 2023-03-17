@@ -93,7 +93,7 @@ def images_transformer(x):
 
 def prepare_input_train(data_dir : str):
     image_datasets = {x: datasets.DatasetFolder(os.path.join(data_dir, x), loader=npy_loader, extensions=['.npy'], transform=images_transformer(x)) for x in ['train', 'val']}
-    dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=4, shuffle=True, num_workers=4) for x in ['train', 'val']}
+    dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=256, shuffle=True, num_workers=4) for x in ['train', 'val']}
     return dataloaders
 
 features_blobs = []
@@ -215,8 +215,11 @@ def predict(model, img, class_names):
     # prediction de la classe de l'image
     coeff = outputs.detach().numpy()[0]
     df = pd.DataFrame({'probability': coeff, 'cellid': class_names})
+    print("Avant", df)
     df['probability'] = df['probability'].apply(logit2prob)
     df = df.sort_values(by = 'probability', ascending = False)
+    print("Apres", df)
+    print(df)
     df_3_most_probable = df[:3].reset_index(drop=True)
     print('👉 dataframe of the 3 most probable prediction: ')
     print(df_3_most_probable)
