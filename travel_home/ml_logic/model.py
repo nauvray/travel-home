@@ -215,11 +215,10 @@ def predict(model, img, class_names):
     # prediction de la classe de l'image
     coeff = outputs.detach().numpy()[0]
     df = pd.DataFrame({'probability': coeff, 'cellid': class_names})
-    print("Avant", df)
+    # print("Avant", df)
     df['probability'] = df['probability'].apply(logit2prob)
     df = df.sort_values(by = 'probability', ascending = False)
-    print("Apres", df)
-    print(df)
+    # print("Apres", df)
     df_3_most_probable = df[:3].reset_index(drop=True)
     print('👉 dataframe of the 3 most probable prediction: ')
     print(df_3_most_probable)

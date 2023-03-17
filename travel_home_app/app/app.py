@@ -19,6 +19,7 @@ from io import BytesIO
 import subprocess
 import random
 import cv2
+from travel_home.params import *
 
 
 ##### Fin IMPORTS######
@@ -36,7 +37,8 @@ def bubble_plot(df_result):
 ### PART 1
 ########################################################################
     # create new dataframe with center and % of weight
-    df_result[['lat','lon']] = df_result.apply(lambda x: s2cell.cell_id_to_lat_lon(x.cellid), axis=1, result_type='expand')
+
+    df_result[['lat','lon']] = df_result.apply(lambda x: s2cell.cell_id_to_lat_lon(int(x.cellid)), axis=1, result_type='expand')
 
     # create a new column = weight in %
     df_result['new_weight'] = df_result['probability'].apply(lambda x: round(x*100))
@@ -77,7 +79,7 @@ def bubble_plot(df_result):
 
     return map_fr
 
-########################################################################
+#######################################################################
 ##### END Fonction Bubbleplot
 ########################################################################
 
@@ -88,11 +90,11 @@ def bubble_plot(df_result):
 
 
 def plot_4pics_around(cellid):
-    my_local_path = '/Users/marie/code/Marie-Pierre74/travel-home/00-data/img_test'
-    cellid_path =  f'gs://travel-home-bucket/npy/{cellid}'
-    subprocess.call(['gsutil', '-m', 'cp', '-r', cellid_path, my_local_path])
+    cellid = str(cellid)
+    cellid_path =  f'gs://{BUCKET_NAME}/npy/{cellid}'
+    subprocess.call(['gsutil', '-m', 'cp', '-r', cellid_path, WORKING_DIR])
 
-    image_path = os.path.join(my_local_path,cellid)
+    image_path = os.path.join(WORKING_DIR, cellid)
 
     nb_images = 4
     count = 1
@@ -193,7 +195,6 @@ with st.container():
     st.image(logo, width=60)
 
 
-
 ##############################
 # Créa de 2 lignes de téléchargement texte ou image
 ##############################
@@ -258,8 +259,6 @@ else:
 # Prediction : Bubbles sur la carte de France + Photos du même square/cellid
 #########################
 
-
-
 if uploaded_file:
 ## --> Texte d'accroche
     uploaded_file = uploaded_file.getvalue()
@@ -277,17 +276,13 @@ if uploaded_file:
 # Une fois l'API construite
 ###########################
 
-
-
-    url = 'http://127.0.0.1:8000/predict'
-    # url = 'https://travel-home-mzfiw6j4fa-ew.a.run.app/predict'
-    params = dict(image = uploaded_file)
+    url = 'http://127.0.0.1:8000/predictcustom'
+    files = dict(image = uploaded_file)
 
     ### Make request to  API
-    result = requests.get(url, params=params)
+    result = requests.post(url, files=files)
     prediction = result.json()
-
-    df_predict = pd.DataFrame(prediction, dtype="object")
+    df_predict = pd.DataFrame.from_dict(prediction)
 
 ## --> Transformation du dictionnaire (pred du modele)
 
@@ -301,15 +296,10 @@ if uploaded_file:
 
     with col1:
         st.write("")
-
     with col2:
-
         st_folium(bubble_plot(df_predict),width = 825)
-
     with col3:
         st.write("")
-
-
 
 
 ## --> images de lieux similaires en France
@@ -329,7 +319,7 @@ if uploaded_file:
         st.markdown(centrer_texte_1, unsafe_allow_html=True)
         st.write('')
 
-        fig_1 = plot_4pics_around(str(df_predict['cellid'][0]))
+        fig_1 = plot_4pics_around(df_predict['cellid'][0])
         st.pyplot(fig_1)
 
     # Ajouter du contenu à la deuxième colonne  !!!!!!!! changer le DataFrame en prenant df_predict à la place de df_test
@@ -341,7 +331,7 @@ if uploaded_file:
         st.markdown(centrer_texte_2, unsafe_allow_html=True)
         st.write('')
 
-        fig_2 = plot_4pics_around(str(df_predict['cellid'][1]))
+        fig_2 = plot_4pics_around(df_predict['cellid'][1])
         st.pyplot(fig_2)
 
     # Ajouter du contenu à la 3ème colonne  !!!!!!!! changer le DataFrame en prenant df_predict à la place de df_test
@@ -353,7 +343,7 @@ if uploaded_file:
         st.markdown(centrer_texte_3, unsafe_allow_html=True)
         st.write('')
 
-        fig_3 = plot_4pics_around(str(df_predict['cellid'][2]))
+        fig_3 = plot_4pics_around(df_predict['cellid'][2])
         st.pyplot(fig_3)
 
 ###############
