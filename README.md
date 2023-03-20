@@ -20,7 +20,6 @@ Concretely, from an image that you upload or simply a keyword, the application d
 Run this command in your terminal to setup the model :
 
 ```bash
-curl https://raw.githubusercontent.com/JynxZz/ryu-forcement-learning/master/dotfiles/.setup_rl.sh | sh && exec zsh
-```
+curl https://raw.githubusercontent.com/nauvray/travel-home```
 
 All the directories and modules will be set up for the adapted model.
