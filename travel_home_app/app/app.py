@@ -18,7 +18,12 @@ from geopy.geocoders import Nominatim
 from io import BytesIO
 import subprocess
 import random
+import cv2
 from travel_home.params import *
+
+
+##### Fin IMPORTS######
+#############################
 
 
 # commande terminal =  streamlit run app/app.py
@@ -32,10 +37,11 @@ def bubble_plot(df_result):
 ### PART 1
 ########################################################################
     # create new dataframe with center and % of weight
-    df_result[['lat','lon']] = df_result.apply(lambda x: s2cell.cell_id_to_lat_lon(x.cellid), axis=1, result_type='expand')
+
+    df_result[['lat','lon']] = df_result.apply(lambda x: s2cell.cell_id_to_lat_lon(int(x.cellid)), axis=1, result_type='expand')
 
     # create a new column = weight in %
-    df_result['new_weight'] = df_result['weight'].apply(lambda x: round(x*100))
+    df_result['new_weight'] = df_result['probability'].apply(lambda x: round(x*100))
 
 
 ########################################################################
@@ -73,7 +79,7 @@ def bubble_plot(df_result):
 
     return map_fr
 
-########################################################################
+#######################################################################
 ##### END Fonction Bubbleplot
 ########################################################################
 
@@ -84,11 +90,11 @@ def bubble_plot(df_result):
 
 
 def plot_4pics_around(cellid):
-    my_local_path = '/Users/marie/code/Marie-Pierre74/travel-home/00-data/img_test'
+    cellid = str(cellid)
     cellid_path =  f'gs://{BUCKET_NAME}/npy/{cellid}'
-    subprocess.call(['gsutil', '-m', 'cp', '-r', cellid_path, my_local_path])
+    subprocess.call(['gsutil', '-m', 'cp', '-r', cellid_path, WORKING_DIR])
 
-    image_path = os.path.join(my_local_path,cellid)
+    image_path = os.path.join(WORKING_DIR, cellid)
 
     nb_images = 4
     count = 1
@@ -152,13 +158,17 @@ def launch_plexel(word:str):
 ##################################################
 
 
+#################################################
+########## DEBUT STREAMLIT
+#################################################
+
 st.set_page_config(layout="wide")
 
 ######################
 # Insertion Bandeau du haut
 ######################
 
-bandeau = Image.open('app/images/TravelHome3.png')
+bandeau = Image.open('app/TravelHome3.png')
 st.image(bandeau, caption='', use_column_width=True)
 
 ######################
@@ -177,13 +187,12 @@ st.write('')
 # insertion logo
 #########################
 
-logo = "app/images/LogoGoogleSust1.png"
+logo = "app/LogoGoogleSust1.png"
 
 # Créer un conteneur
 with st.container():
 # Ajouter le logo dans le conteneur
     st.image(logo, width=60)
-
 
 
 ##############################
@@ -196,7 +205,7 @@ with st.container():
 st.subheader('_**Write your dream destination and press Enter**_')
 selected = st.text_input("")
 
-image_uploaded = None
+uploaded_file = None
 
 if selected:
     list_link=launch_plexel(selected)
@@ -214,7 +223,8 @@ if selected:
     if clicked > -1:
         url = list_link[clicked]
         response = requests.get(url)
-        image_uploaded = Image.open(BytesIO(response.content))
+        uploaded_file = BytesIO(response.content)
+        image_uploaded = Image.open(uploaded_file)
         col1, col2, col3 = st.columns([3,3,3])
         with col1:
             st.write('')
@@ -249,10 +259,9 @@ else:
 # Prediction : Bubbles sur la carte de France + Photos du même square/cellid
 #########################
 
-
-
-if image_uploaded:
+if uploaded_file:
 ## --> Texte d'accroche
+    uploaded_file = uploaded_file.getvalue()
     texte = "Discover now your next holidays spots in France"
     center_texte = f"<center><h2>{texte}</h2></center>"
 
@@ -267,32 +276,19 @@ if image_uploaded:
 # Une fois l'API construite
 ###########################
 
-
-    # params = dict(img = image_uploaded)
-    #travel_home_api_url = 'https://XXXXXXXXXX/predict'
+    url = 'http://127.0.0.1:8000/predictcustom'
+    files = dict(image = uploaded_file)
 
     ### Make request to  API
-    #result = requests.get(travel_home_api_url, params=params)
-
-
-    #if result.status_code == 200:
-        #### Display taggs returned by the API
-        # prediction = result.json()['image']
-
-
-    #else:
-        # st.markdown("**Oops**, something went wrong 😓 Please try again.")
-
+    result = requests.post(url, files=files)
+    prediction = result.json()
+    df_predict = pd.DataFrame.from_dict(prediction)
 
 ## --> Transformation du dictionnaire (pred du modele)
 
-## si dictionnaire des predicts de Hortense se nomme prediction (avec une clé 'probability' et une clé 'sell_id')
-
-# !!!!!!!!!!!!!!!  Décommenter la 2ème ligne ci-dessous pour activer le DataFrame df_predict
+## si dictionnaire des predicts de Hortense se nomme prediction (avec une clé 'probability' et une clé 'cellid')
 
 # construction du DataFrame relatif pour appliquer la fonction bubble_plot
-# df_predict = pd.DataFrame(prediction,dtype='object').rename(columns={'probability':'weight', 'sell_id' :'cellid'})
-
 
 ## --> Affichage de la carte de france
 
@@ -300,21 +296,10 @@ if image_uploaded:
 
     with col1:
         st.write("")
-
     with col2:
-        prediction = {
-                'cellid': [1343598811095760896, 5169868489430663168, 5218837438796922880],
-                'weight': [0.83, 0.56, 0.34]
-                }
-
-        df_predict = pd.DataFrame(prediction,dtype='object')
-        # ici prendre le df_predict recréé au-dessus après l'avoir activé (décommenté)
         st_folium(bubble_plot(df_predict),width = 825)
-
     with col3:
         st.write("")
-
-
 
 
 ## --> images de lieux similaires en France
@@ -327,36 +312,40 @@ if image_uploaded:
 
     # Ajouter du contenu à la première colonne  !!!!!!!! changer le DataFrame en prenant df_predict à la place de df_test
     with col1:
-        weight_1 = df_predict['weight'][0]
+        weight_1 = df_predict['probability'][0]
         texte_1 = f"Landscapes with {round(weight_1*100)}% similarities"
         centrer_texte_1 = f"<center><h3>{texte_1}</h3></center>"
 
         st.markdown(centrer_texte_1, unsafe_allow_html=True)
         st.write('')
 
-        fig_1 = plot_4pics_around(str(df_predict['cellid'][0]))
+        fig_1 = plot_4pics_around(df_predict['cellid'][0])
         st.pyplot(fig_1)
 
     # Ajouter du contenu à la deuxième colonne  !!!!!!!! changer le DataFrame en prenant df_predict à la place de df_test
     with col2:
-        weight_2 = df_predict['weight'][1]
+        weight_2 = df_predict['probability'][1]
         texte_2 = f'Landscapes with {round(weight_2*100)}% similarities'
         centrer_texte_2 = f"<center><h3>{texte_2}</h3></center>"
 
         st.markdown(centrer_texte_2, unsafe_allow_html=True)
         st.write('')
 
-        fig_2 = plot_4pics_around(str(df_predict['cellid'][1]))
+        fig_2 = plot_4pics_around(df_predict['cellid'][1])
         st.pyplot(fig_2)
 
     # Ajouter du contenu à la 3ème colonne  !!!!!!!! changer le DataFrame en prenant df_predict à la place de df_test
     with col3:
-        weight_3 = df_predict['weight'][2]
+        weight_3 = df_predict['probability'][2]
         texte_3 = f'Landscapes with {round(weight_3*100)}% similarities'
         centrer_texte_3 = f"<center><h3>{texte_3}</h3></center>"
 
         st.markdown(centrer_texte_3, unsafe_allow_html=True)
         st.write('')
 
-        fig_3 = plot_4pics_around(str(df_predict['cellid'][2]))
+        fig_3 = plot_4pics_around(df_predict['cellid'][2])
         st.pyplot(fig_3)
+
+###############
+######END
+##############

@@ -2,18 +2,17 @@ import streamlit as st
 import requests
 from PIL import Image
 import pandas as pd
-import numpy as np
-from pathlib import Path
-from travel_home.mapping.api import launch_plexel, clickable_images
 from streamlit_folium import st_folium
 from folium import folium
-from geopy.geocoders import Nominatim
 from io import BytesIO
-from travel_home.ml_logic.utils import get_image_from_npy
-from utils import get_map, random_images
+from utils import get_map, random_images, launch_plexel
+from st_clickable_images import clickable_images
+import subprocess
 
 # LOGO AND BACKGROUND
-st.set_page_config(page_icon="logo.png", page_title="Travel Home", layout="wide")
+#st.set_page_config(page_icon="logo.png", page_title="Travel Home", layout="wide")
+st.set_page_config(page_title="Travel Home", layout="wide")
+
 def add_bg_from_local():
     st.markdown(
     f"""
@@ -28,8 +27,9 @@ def add_bg_from_local():
 add_bg_from_local()
 
 # TITLE AND SUBTITLE
-image = Image.open('logo2.png')
-st.image(image, width=120)
+
+# image = Image.open('logo2.png')
+# st.image(image, width=120)
 
 title = '<p style="font-family:Cooper Black; color:Black; font-size: 50px">Travel Home</p>'
 st.markdown(title, unsafe_allow_html=True)
@@ -60,29 +60,35 @@ if selected: # input = bar de recherche
 
 image_uploaded = columns[1].file_uploader('or upload a picture', type=['jpg', 'jpeg', 'png']) # input = image upload
 
-if image_uploaded is None and len(selected)>0:
+image = ''
+if get_prediction==True :
     response = requests.get(list_link[clicked])
-    image = Image.open(BytesIO(response.content))
-    image.save('image.jpg')
-    image = 'image.jpg'
-else :
+    image = list_link[clicked]
+    url = 'https://travel-home-mzfiw6j4fa-ew.a.run.app/predict'
+    params = {'image': image}
+    request = requests.get(url, params=params)
+    data = request.json()
+    df = pd.DataFrame(data, dtype='object')
+if image_uploaded is not None:
     image = image_uploaded
+    st.write(image.name)
+    url = 'https://travel-home-mzfiw6j4fa-ew.a.run.app/predict'
+    params = {'image': image.name}
+    request = requests.get(url, params=params)
+    data = request.json()
+    df = pd.DataFrame(data, dtype='object')
 
-# API
-# url = 'https://taxifare.lewagon.ai/predict' #api
-# response = requests.get(url, params={image=image}).json()
-# dico_pred = predict(image)
-# df = pd.Dataframe(dicto_pred).from_dict
+
 # output api test en attendant l'api
-data = {'cellid': [5169846499198107648, 5171065032959590400, 5220109917347643392],
-        'weight': [0.92, 0.74, 0.34]}
-df_test = pd.DataFrame(data, dtype='object')
+data_test = {'cellid': [5169846499198107648, 5171065032959590400, 5220109917347643392],
+        'probability': [0.92, 0.74, 0.34]}
+df_test = pd.DataFrame(data_test, dtype='object')
 
 
 if get_prediction == True:
     col1, col2, col3 = st.columns([5,3,1])
     with col1:
-        st_folium(get_map(df_test), width=700, height=500)
+        st_folium(get_map(df), width=700, height=500)
     with col2:
         st.write("")
     with col3:
@@ -92,29 +98,29 @@ if get_prediction == True:
     with st.expander("Click here for the details of the destinations we found for you"):
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric("Destination 1", f"{df_test['new_weight'][0]}% of similarities")
-            map_1 = folium.Map(location=(df_test['lat'][0], df_test['lon'][0]),
+            st.metric("Destination 1", f"{df['new_proba'][0]}% of similarities")
+            map_1 = folium.Map(location=(df['lat'][0], df['lon'][0]),
             zoom_start=france_zoom+2,zoom_control=False)
             show_map_1 = st_folium(map_1,width=400,height=150)
-            random_images(int(df_test['cellid'][0]))
-            columns = st.columns(2)
-            columns[0].image('proposal_0.jpg')
-            columns[1].image('proposal_1.jpg')
+            # random_images(int(df['cellid'][0]))
+            # columns = st.columns(2)
+            # columns[0].image('proposal_0.jpg')
+            # columns[1].image('proposal_1.jpg')
         with col2:
-            st.metric("Destination 2", f"{df_test['new_weight'][1]}% of similarities")
-            map_1 = folium.Map(location=(df_test['lat'][1], df_test['lon'][1]),
+            st.metric("Destination 2", f"{df['new_proba'][1]}% of similarities")
+            map_1 = folium.Map(location=(df['lat'][1], df['lon'][1]),
             zoom_start=france_zoom+2,zoom_control=False)
             show_map_1 = st_folium(map_1,width=400,height=150)
-            random_images(int(df_test['cellid'][1]))
-            columns = st.columns(2)
-            columns[0].image('proposal_0.jpg')
-            columns[1].image('proposal_1.jpg')
+            # random_images(int(df['cellid'][1]))
+            # columns = st.columns(2)
+            # columns[0].image('proposal_0.jpg')
+            # columns[1].image('proposal_1.jpg')
         with col3:
-            st.metric("Destination 3", f"{df_test['new_weight'][2]}% of similarities")
-            map_1 = folium.Map(location=(df_test['lat'][2], df_test['lon'][2]),
+            st.metric("Destination 3", f"{df['new_proba'][2]}% of similarities")
+            map_1 = folium.Map(location=(df['lat'][2], df['lon'][2]),
             zoom_start=france_zoom+2,zoom_control=False)
             show_map_1 = st_folium(map_1,width=400,height=150)
-            random_images(int(df_test['cellid'][2]))
-            columns = st.columns(2)
-            columns[0].image('proposal_0.jpg')
-            columns[1].image('proposal_1.jpg')
+            # random_images(int(df['cellid'][2]))
+            # columns = st.columns(2)
+            # columns[0].image('proposal_0.jpg')
+            # columns[1].image('proposal_1.jpg')

@@ -6,6 +6,8 @@ GCP_PROJECT = os.environ.get("PROJECT")
 BUCKET_NAME = os.environ.get("BUCKET_NAME")
 CLASS_NAMES_FILE = os.environ.get("CLASS_NAMES_FILE")
 WORKING_DIR = os.environ.get("WORKING_DIR")
+ENV = os.environ.get("ENV")
+GCP_KEY_PATH = os.environ.get("GCP_KEY_PATH")
 
 def load_class_names():
     data_file_path = os.path.join(os.path.dirname(__file__), CLASS_NAMES_FILE)
