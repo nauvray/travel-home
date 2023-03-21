@@ -58,9 +58,11 @@ def geohashing_zoom_s2(start_zoom:int,end_zoom:int,threshold:int,path:str,all_fi
     file_list = os.listdir(path)
     file_list_csv= [filename for filename in file_list if filename.endswith('.csv') ]
     nb_files=len(file_list_csv)
+    print(nb_files)
     if all_files == True :
-        file_path = Path(f'{path}meta_shard_no_img.csv')
-        if file_path.is_file():
+        file_path = (f'{path}meta_shard_no_img.csv')
+        print(Path(file_path).is_file())
+        if Path(file_path).is_file():
             df_sample=pd.read_csv(f'{path}meta_shard_no_img.csv')
             max_i = int(df_sample['folder'].max())
             df_sample=df_sample[df_sample['folder']<max_i]
@@ -69,7 +71,8 @@ def geohashing_zoom_s2(start_zoom:int,end_zoom:int,threshold:int,path:str,all_fi
             max_i=0
             print('No existing file')
         for i in range(nb_files):
-            if i < max_i:
+            print(max_i)
+            if i <= max_i:
                 next
             else:
                 if i ==0:
@@ -122,13 +125,20 @@ def geohashing_zoom_s2(start_zoom:int,end_zoom:int,threshold:int,path:str,all_fi
         if df_sample_csv.cellid[k]=='_':
             df_sample_csv.loc[k,'cellid']=df_sample_csv.loc[k,f'geohash_{zoom+1}']
             df_sample_csv.loc[k,'zoom']=zoom+1
+    df_sample_csv.to_csv(f'{path}meta_shard_no_img_zoom.csv')
     for i in range(nb_files):
         df_temp = pd.read_csv(f'{path}meta_shard_{i}.csv')
         print(f'Loading file {i}')
         df_extract=df_sample_csv[df_sample_csv['folder']==i].reset_index(drop=True,inplace=False)
         df_extract=pd.concat([df_temp,df_extract['cellid']],axis=1)
-        df_extract.to_csv(f'{path}../data_csv_hashed/meta_shard_{i}.csv',index=False)
-        print(f'File {i} loaded in {path}../data_csv_hashed/meta_shard_{i}.csv')
+        path_hashed = path+'data_csv_hashed/'
+        if Path(path_hashed).is_dir :
+            df_extract.to_csv(f'{path}data_csv_hashed/meta_shard_{i}.csv',index=False)
+            print(f'File {i} loaded in {path}data_csv_hashed/meta_shard_{i}.csv')
+        else:
+            os.mkdir(path_hashed)
+            df_extract.to_csv(f'{path}data_csv_hashed/meta_shard_{i}.csv',index=False)
+            print(f'File {i} loaded in {path}data_csv_hashed/meta_shard_{i}.csv')
     return df_sample_csv
 
 def create_df_squares(df_sample_csv:pd.DataFrame) ->pd.DataFrame:
@@ -184,7 +194,7 @@ def plot_squares(df_cellid:pd.DataFrame,path:str):
         x_big = [df_cellid['top_left_lon'][i],df_cellid['top_right_lon'][i],df_cellid['bot_left_lon'][i],df_cellid['bot_right_lon'][i],df_cellid['top_left_lon'][i]]  # lon
         y_big = [df_cellid['top_left_lat'][i],df_cellid['top_right_lat'][i],df_cellid['bot_left_lat'][i],df_cellid['bot_right_lat'][i],df_cellid['top_left_lat'][i]]   # lat
         map.plot(x_big, y_big, color='yellow', lw=1)
-    plt.show()
+    # plt.show()
     plt.savefig(f'{path}Map.png')
     return
 
@@ -201,12 +211,12 @@ def geohash_csv(start_zoom:int,end_zoom:int,threshold:int,path:str,all_files:boo
     return
 
 if __name__ == '__main__':
-    path = '../00-data/data_csv/'
-    # path = 'gs://travel-home-bucket/data-csv/'
-    start_zoom = 5
-    end_zoom = 18
-    threshold = 500
+    # path = '../../00-data/data_csv/'
+    path = 'gs://travel-home-bckt/data-csv/'
+    start_zoom = 6
+    end_zoom = 12
+    threshold = 1000
     reduced = False
     all_files=True
     limit_max=1500
-    geohash_csv(start_zoom,end_zoom,threshold,path,all_files,reduced,limit_max)
+    geohash_csv(start_zoom,end_zoom,threshold,path,all_files)
