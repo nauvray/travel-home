@@ -6,6 +6,7 @@ pathlib
 s2cell
 s2sphere
 torch
+torchvision
 gcsfs
 fsspec
 fastapi
