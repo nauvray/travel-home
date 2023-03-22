@@ -102,6 +102,7 @@ def create_preproc_csv(root_folder : str, csv_name : str, df : pd.DataFrame) -> 
     output_csv_path = os.path.join(root_folder, output_csv_name)
 
     header = False if os.path.isfile(output_csv_path) else True
+    print(df.keys())
     df.to_csv(output_csv_path, mode='a', header=header, index=False)
     # save in gcs
     # storage_file_path = f"gs://{BUCKET_NAME}/preproc_csv/{output_csv_name}"
@@ -116,11 +117,11 @@ def preprocess_csv_task(root_folder : str, csv_name : str) -> None:
     # df : img lat lon hexa cellid + storage path
     df = utils.get_df_from_csv(root_folder, csv_name)
     df = utils.add_storage_path(df)
-    df = df[0:5].reset_index(drop=True)
+    df = df[0:].reset_index(drop=True)
     # filter outdoor images
     start_time1 = time.time()
     df = filter_outdoor_images(df)
-    df.to_csv('outdoor.csv')
+    # df.to_csv(f'{root_folder}outdoor.csv')
     print('==> Time to filter outdoor images:', round(time.time() - start_time1, 1), 's')
 
     # save images as npy files
@@ -146,7 +147,7 @@ def preprocess_csv(csv_names : list)-> None:
             process.join()
 
 if __name__ == '__main__':
-    root_folder = "../../00-data/data_csv/sample/" ## TO CHANGE
+    root_folder = "../../00-data/data_csv_hashed/" ## TO CHANGE
     start_time = time.time()
     csv_names = [filename for filename in os.listdir(root_folder) if filename.startswith("meta_shard_")]
     print(csv_names)
