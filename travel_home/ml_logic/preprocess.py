@@ -104,8 +104,8 @@ def create_preproc_csv(root_folder : str, csv_name : str, df : pd.DataFrame) -> 
     header = False if os.path.isfile(output_csv_path) else True
     df.to_csv(output_csv_path, mode='a', header=header, index=False)
     # save in gcs
-    storage_file_path = f"gs://{BUCKET_NAME}/preproc_csv/{output_csv_name}"
-    subprocess.call(['gsutil', 'cp', output_csv_path, storage_file_path])
+    # storage_file_path = f"gs://{BUCKET_NAME}/preproc_csv/{output_csv_name}"
+    # subprocess.call(['gsutil', 'cp', output_csv_path, storage_file_path])
 
     if header:
         print(f"✅ csv {output_csv_name} created!")
@@ -120,6 +120,7 @@ def preprocess_csv_task(root_folder : str, csv_name : str) -> None:
     # filter outdoor images
     start_time1 = time.time()
     df = filter_outdoor_images(df)
+    df.to_csv('outdoor.csv')
     print('==> Time to filter outdoor images:', round(time.time() - start_time1, 1), 's')
 
     # save images as npy files
@@ -145,7 +146,7 @@ def preprocess_csv(csv_names : list)-> None:
             process.join()
 
 if __name__ == '__main__':
-    root_folder = "../../00-data/pre_process3/" ## TO CHANGE
+    root_folder = "../../00-data/data_csv/sample/" ## TO CHANGE
     start_time = time.time()
     csv_names = [filename for filename in os.listdir(root_folder) if filename.startswith("meta_shard_")]
     print(csv_names)

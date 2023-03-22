@@ -101,31 +101,35 @@ def geohashing_zoom_s2(start_zoom:int,end_zoom:int,threshold:int,path:str,all_fi
     df_sample_csv[f'geohash_{start_zoom}'] = df_sample_csv.apply(lambda x: s2cell.lat_lon_to_cell_id(x.lat,x.lon,start_zoom),axis=1)
     completed_list=[]
     # Start looping and zooming
-    for zoom in range(start_zoom-1,end_zoom):
-        if (df_sample_csv.cellid=='_').sum()!=0:
-            if zoom > start_zoom-1:
-                print((df_sample_csv.cellid=='_').sum())
-                zoom_n2 = df_sample_csv[[f'geohash_{zoom}','count']]
-                zoom_n2=zoom_n2.groupby(by=f'geohash_{zoom}').count().reset_index()
-                for i in range(len(df_sample_csv)):
-                    if (df_sample_csv[f'geohash_{zoom}'][i] in list(zoom_n2[f'geohash_{zoom}'][zoom_n2['count']<threshold])
-                    and i not in completed_list):
-                        for j in range(len(df_sample_csv)):
-                            if df_sample_csv[f'geohash_{zoom}'][j]==df_sample_csv[f'geohash_{zoom}'][i]:
-                                if df_sample_csv.cellid[j]=='_':
-                                    df_sample_csv.loc[j,'cellid']=df_sample_csv.loc[i,f'geohash_{zoom}']
-                                    df_sample_csv.loc[j,'zoom']=zoom
-                                    completed_list.append(j)
-                df_sample_csv.drop(columns=[f'geohash_{zoom}'],inplace=True)
-                df_sample_csv[f'geohash_{zoom+1}'] = df_sample_csv.apply(lambda x: s2cell.lat_lon_to_cell_id(x.lat,x.lon,zoom+1),axis=1)
-            else:
-                next
-    # Saving the files with the adapted cellid depending on the geohash
-    for k in range(len(df_sample_csv)):
-        if df_sample_csv.cellid[k]=='_':
-            df_sample_csv.loc[k,'cellid']=df_sample_csv.loc[k,f'geohash_{zoom+1}']
-            df_sample_csv.loc[k,'zoom']=zoom+1
-    df_sample_csv.to_csv(f'{path}meta_shard_no_img_zoom.csv')
+    if not Path(f'{path}meta_shard_no_img_zoom.csv').is_file():
+        for zoom in range(start_zoom-1,end_zoom):
+            if (df_sample_csv.cellid=='_').sum()!=0:
+                if zoom > start_zoom-1:
+                    print((df_sample_csv.cellid=='_').sum())
+                    zoom_n2 = df_sample_csv[[f'geohash_{zoom}','count']]
+                    zoom_n2=zoom_n2.groupby(by=f'geohash_{zoom}').count().reset_index()
+                    for i in range(len(df_sample_csv)):
+                        if (df_sample_csv[f'geohash_{zoom}'][i] in list(zoom_n2[f'geohash_{zoom}'][zoom_n2['count']<threshold])
+                        and i not in completed_list):
+                            for j in range(len(df_sample_csv)):
+                                if df_sample_csv[f'geohash_{zoom}'][j]==df_sample_csv[f'geohash_{zoom}'][i]:
+                                    if df_sample_csv.cellid[j]=='_':
+                                        df_sample_csv.loc[j,'cellid']=df_sample_csv.loc[i,f'geohash_{zoom}']
+                                        df_sample_csv.loc[j,'zoom']=zoom
+                                        completed_list.append(j)
+                    df_sample_csv.drop(columns=[f'geohash_{zoom}'],inplace=True)
+                    df_sample_csv[f'geohash_{zoom+1}'] = df_sample_csv.apply(lambda x: s2cell.lat_lon_to_cell_id(x.lat,x.lon,zoom+1),axis=1)
+                else:
+                    next
+        # Saving the files with the adapted cellid depending on the geohash
+        for k in range(len(df_sample_csv)):
+            if df_sample_csv.cellid[k]=='_':
+                df_sample_csv.loc[k,'cellid']=df_sample_csv.loc[k,f'geohash_{zoom+1}']
+                df_sample_csv.loc[k,'zoom']=zoom+1
+        df_sample_csv.to_csv(f'{path}meta_shard_no_img_zoom.csv',index=False)
+    else:
+        df_sample_csv.read_csv(f'{path}meta_shard_no_img_zoom.csv')
+        df_sample_csv.drop(df_sample_csv.columns[0],axis=1,inplace=True).reset_index(drop=True)
     for i in range(nb_files):
         df_temp = pd.read_csv(f'{path}meta_shard_{i}.csv')
         print(f'Loading file {i}')
