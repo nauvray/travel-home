@@ -6,14 +6,14 @@ import validators
 from PIL import Image
 
 
-def train(num_epochs : int, force_train : bool):
+def train(num_epochs: int, force_train: bool):
     # add "npy" folder to data_dir as images are saved in "npy" folder in the bucket
     data_dir = os.path.join(WORKING_DIR, "npy")
     # load pre trained model if it exists
     model = registry.load_travel_home_model()
 
-    if ((model is None) or force_train):
-        if (model is None):
+    if (model is None) or force_train:
+        if model is None:
             print("no model found, start training...")
         else:
             print("force model training...")
@@ -29,20 +29,22 @@ def train(num_epochs : int, force_train : bool):
     else:
         print("No training required")
 
-def predict(image : str):
+
+def predict(image: str):
     model = registry.load_travel_home_model()
     assert model is not None
 
-    if (validators.url(image)):
+    if validators.url(image):
         img = utils.get_image_from_url(image)
     else:
         img = Image.open(image)
 
     md.predict(model, img, load_class_names())
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     print("=====TRAINING======")
-    num_epochs = 50
+    num_epochs = 10
     train(num_epochs=num_epochs, force_train=False)
 
     print("====PREDICTION=====")
