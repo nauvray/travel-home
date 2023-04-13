@@ -25,9 +25,11 @@ show_bucket:
 	gcloud config set project ${BUCKET_PROJECT}
 	gsutil ls gs://${BUCKET_NAME}
 
-show_maddia_vm:
-	gcloud config set project ${BUCKET_PROJECT}
-	gcloud compute ssh ${INSTANCE_2}
-show_nico_VM:
+show_VM:
 	gcloud config set project ${VM_PROJECT}
+	gcloud compute ssh ${INSTANCE}
+
+start_VM:
+	gcloud config set project ${VM_PROJECT}
+	gcloud compute instances start ${INSTANCE}
 	gcloud compute ssh ${INSTANCE}
